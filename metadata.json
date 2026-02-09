@@ -1,0 +1,8 @@
+{
+  "name": "KrewsUp",
+  "description": "A comprehensive platform for event organizers to find professional talent and gig workers to find flexible event opportunities.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

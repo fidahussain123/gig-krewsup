@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "KrewsUp",
+    "slug": "krewsup",
+    "scheme": "krewsup",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {},
+    "web": {
+      "bundler": "metro"
+    },
+    "extra": {
+      "apiUrl": "http://localhost:3001/api",
+      "socketUrl": "http://localhost:3001"
+    },
+    "plugins": [
+      "@react-native-community/datetimepicker"
+    ]
+  }
+}
