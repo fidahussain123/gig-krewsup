@@ -5,6 +5,25 @@ import { addWorkerToEventGroup } from '../websocket/socket.js';
 
 const router = Router();
 
+const FCM_SERVER_KEY = process.env.FCM_SERVER_KEY || '';
+
+async function sendFcmNotification(tokens: string[], title: string, body: string, data: Record<string, string>) {
+  if (!FCM_SERVER_KEY || tokens.length === 0) return;
+  await fetch('https://fcm.googleapis.com/fcm/send', {
+    method: 'POST',
+    headers: {
+      Authorization: `key=${FCM_SERVER_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      registration_ids: tokens,
+      notification: { title, body },
+      data,
+      priority: 'high',
+    }),
+  });
+}
+
 // Update application status (accept/reject)
 router.put('/:id', authMiddleware, roleMiddleware('organizer'), async (req: AuthRequest, res: Response) => {
   try {
@@ -42,12 +61,35 @@ router.put('/:id', authMiddleware, roleMiddleware('organizer'), async (req: Auth
       args: [status, req.params.id],
     });
 
-    // If accepted, add worker to event group
+    // If accepted, add worker to event group and send push
     if (status === 'accepted') {
       await addWorkerToEventGroup(
         application.event_id,
         application.user_id,
         application.worker_name || 'Team Member'
+      );
+
+      const convResult = await db.execute({
+        sql: `SELECT id FROM conversations WHERE event_id = ? AND type = 'event'`,
+        args: [application.event_id],
+      });
+      const conversationId = (convResult.rows[0] as any)?.id;
+
+      const tokenResult = await db.execute({
+        sql: `SELECT token FROM device_tokens WHERE user_id = ?`,
+        args: [application.user_id],
+      });
+      const tokens = tokenResult.rows.map(row => (row as any).token).filter(Boolean);
+
+      await sendFcmNotification(
+        tokens,
+        'Application accepted',
+        'You have been added to the event chat.',
+        {
+          conversationId: conversationId || '',
+          eventId: application.event_id || '',
+          type: 'application_accepted',
+        }
       );
     }
 

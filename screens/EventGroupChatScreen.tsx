@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import api from '../lib/api';
 import socketClient from '../lib/socket';
 import { useAuth } from '../contexts/AuthContext';
@@ -23,15 +23,17 @@ interface Participant {
 }
 
 const EventGroupChatScreen: React.FC = () => {
-  const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
+  const params = useLocalSearchParams<{ conversationId?: string; id?: string }>();
+  const conversationId = (params.conversationId || params.id) as string | undefined;
   const router = useRouter();
-  const { user, token } = useAuth();
+  const { user, token, role } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [conversationTitle, setConversationTitle] = useState('Team Chat');
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
+  const [isCallModalOpen, setIsCallModalOpen] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -155,6 +157,26 @@ const EventGroupChatScreen: React.FC = () => {
     }, 2000);
   };
 
+  const createCallId = () => `${conversationId || 'call'}-${Date.now()}`;
+
+  const handleStartDirectCall = (participantId: string) => {
+    if (!conversationId || !participantId) return;
+    const callId = createCallId();
+    socketClient.sendCallInvite(participantId, callId, conversationId, 'direct');
+    setIsCallModalOpen(false);
+    router.push(`/call/${callId}?conversationId=${conversationId}`);
+  };
+
+  const handleStartGroupCall = () => {
+    if (!conversationId) return;
+    const callId = createCallId();
+    participants
+      .filter(p => p.user_id !== user?.id)
+      .forEach(p => socketClient.sendCallInvite(p.user_id, callId, conversationId, 'group'));
+    setIsCallModalOpen(false);
+    router.push(`/call/${callId}?conversationId=${conversationId}`);
+  };
+
   const formatTime = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true });
@@ -196,8 +218,11 @@ const EventGroupChatScreen: React.FC = () => {
           <Text className="font-bold text-slate-900 text-base">{conversationTitle}</Text>
           <Text className="text-xs text-slate-400">{participants.length} members</Text>
         </View>
-        <Pressable className="h-10 w-10 rounded-full bg-slate-100 items-center justify-center">
-          <Icon name="group" className="text-slate-600" />
+        <Pressable
+          onPress={() => setIsCallModalOpen(true)}
+          className="h-10 w-10 rounded-full bg-slate-100 items-center justify-center"
+        >
+          <Icon name="call" className="text-slate-600" />
         </Pressable>
       </View>
 
@@ -292,6 +317,46 @@ const EventGroupChatScreen: React.FC = () => {
           </Pressable>
         </View>
       </View>
+
+      <Modal visible={isCallModalOpen} transparent animationType="fade" onRequestClose={() => setIsCallModalOpen(false)}>
+        <View className="flex-1 items-center justify-center bg-black/50 px-6">
+          <View className="w-full rounded-2xl bg-white p-5">
+            <Text className="text-base font-extrabold text-slate-900">Start voice call</Text>
+            <Text className="text-xs text-slate-400 mt-1">Choose a member to call</Text>
+            <ScrollView className="mt-4 max-h-60">
+              {participants
+                .filter(p => p.user_id !== user?.id)
+                .map((p) => (
+                  <Pressable
+                    key={p.user_id}
+                    onPress={() => handleStartDirectCall(p.user_id)}
+                    className="flex-row items-center gap-3 py-3 border-b border-slate-100"
+                  >
+                    <View className="h-9 w-9 rounded-full bg-slate-100 items-center justify-center overflow-hidden">
+                      {p.avatar_url ? (
+                        <Image source={{ uri: p.avatar_url }} className="w-full h-full" resizeMode="cover" />
+                      ) : (
+                        <Text className="text-xs font-bold text-slate-600">{p.name?.[0] || '?'}</Text>
+                      )}
+                    </View>
+                    <Text className="text-sm font-semibold text-slate-700">{p.name || 'Member'}</Text>
+                  </Pressable>
+                ))}
+            </ScrollView>
+            {role === 'organizer' && participants.length > 1 && (
+              <Pressable
+                onPress={handleStartGroupCall}
+                className="mt-4 h-12 rounded-xl bg-primary items-center justify-center"
+              >
+                <Text className="text-white font-bold text-sm">Start group call</Text>
+              </Pressable>
+            )}
+            <Pressable onPress={() => setIsCallModalOpen(false)} className="mt-3 h-11 rounded-xl bg-slate-100 items-center justify-center">
+              <Text className="text-slate-600 font-bold text-sm">Cancel</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };

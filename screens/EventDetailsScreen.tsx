@@ -54,6 +54,8 @@ const EventDetailsScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'details' | 'applicants'>('applicants');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [isCreatingChat, setIsCreatingChat] = useState(false);
 
   useEffect(() => {
     loadEventDetails();
@@ -73,6 +75,12 @@ const EventDetailsScreen: React.FC = () => {
     const applicantsResult = await api.getEventApplicants(id);
     if (applicantsResult.data?.applicants) {
       setApplicants(applicantsResult.data.applicants);
+    }
+
+    // Load conversation if exists
+    const convResult = await api.getEventConversation(id);
+    if (convResult.data?.conversationId) {
+      setConversationId(convResult.data.conversationId);
     }
     
     setIsLoading(false);
@@ -107,6 +115,21 @@ const EventDetailsScreen: React.FC = () => {
   const pendingApplicants = applicants.filter(a => a.status === 'pending');
   const acceptedApplicants = applicants.filter(a => a.status === 'accepted');
   const rejectedApplicants = applicants.filter(a => a.status === 'rejected');
+
+  const handleCreateOrOpenChat = async () => {
+    if (!id) return;
+    if (conversationId) {
+      router.push(`/chat/event/${conversationId}`);
+      return;
+    }
+    setIsCreatingChat(true);
+    const result = await api.createEventConversation(id);
+    if (result.data?.conversationId) {
+      setConversationId(result.data.conversationId);
+      router.push(`/chat/event/${result.data.conversationId}`);
+    }
+    setIsCreatingChat(false);
+  };
 
   if (isLoading) {
     return (
@@ -176,6 +199,18 @@ const EventDetailsScreen: React.FC = () => {
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 24 }}>
         {activeTab === 'details' ? (
           <View className="p-4 space-y-4">
+            <View className="bg-white rounded-2xl p-4 shadow-sm">
+              <Text className="text-xs font-bold text-slate-400 uppercase mb-3">Group Chat</Text>
+              <Pressable
+                onPress={handleCreateOrOpenChat}
+                disabled={isCreatingChat}
+                className="h-12 rounded-xl bg-primary items-center justify-center"
+              >
+                <Text className="text-white font-bold text-sm">
+                  {isCreatingChat ? 'Creating...' : conversationId ? 'Open Group Chat' : 'Create Group Chat'}
+                </Text>
+              </Pressable>
+            </View>
             <View className="bg-white rounded-2xl p-4 shadow-sm">
               <Text className="text-xs font-bold text-slate-400 uppercase mb-3">Date & Time</Text>
               <View className="flex-row items-center gap-3 mb-2">

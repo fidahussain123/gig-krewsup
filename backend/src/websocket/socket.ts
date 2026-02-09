@@ -9,11 +9,14 @@ interface AuthenticatedSocket extends Socket {
 }
 
 let io: Server;
+const callParticipants = new Map<string, Set<string>>();
 
 export function initWebSocket(server: HttpServer) {
+  const originEnv = process.env.CORS_ORIGIN;
+  const origins = originEnv ? originEnv.split(',').map(o => o.trim()).filter(Boolean) : true;
   io = new Server(server, {
     cors: {
-      origin: ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173'],
+      origin: origins,
       credentials: true,
     },
   });
@@ -28,8 +31,11 @@ export function initWebSocket(server: HttpServer) {
 
     try {
       const decoded = jwt.verify(token as string, process.env.JWT_SECRET!) as any;
-      socket.userId = decoded.userId;
+      socket.userId = decoded.id || decoded.userId;
       socket.userRole = decoded.role;
+      if (!socket.userId) {
+        return next(new Error('Invalid token payload'));
+      }
       next();
     } catch (error) {
       next(new Error('Invalid token'));
@@ -103,7 +109,88 @@ export function initWebSocket(server: HttpServer) {
     });
 
     socket.on('disconnect', () => {
+      if ((socket as any).callIds) {
+        for (const callId of (socket as any).callIds as Set<string>) {
+          const participants = callParticipants.get(callId);
+          if (participants) {
+            participants.delete(socket.userId!);
+            socket.to(`call:${callId}`).emit('call_user_left', { callId, userId: socket.userId });
+            if (participants.size === 0) {
+              callParticipants.delete(callId);
+            }
+          }
+        }
+      }
       console.log(`🔌 User disconnected: ${socket.userId}`);
+    });
+
+    // Call signaling
+    socket.on('call_invite', (data: { callId: string; toUserId: string; conversationId?: string; mode?: string }) => {
+      if (!socket.userId) return;
+      emitToUser(data.toUserId, 'call_invite', {
+        callId: data.callId,
+        fromUserId: socket.userId,
+        conversationId: data.conversationId,
+        mode: data.mode || 'direct',
+      });
+    });
+
+    socket.on('call_join', (data: { callId: string }) => {
+      if (!socket.userId) return;
+      const callId = data.callId;
+      socket.join(`call:${callId}`);
+      const participants = callParticipants.get(callId) || new Set<string>();
+      participants.add(socket.userId);
+      callParticipants.set(callId, participants);
+      (socket as any).callIds = (socket as any).callIds || new Set<string>();
+      (socket as any).callIds.add(callId);
+      const others = Array.from(participants).filter(id => id !== socket.userId);
+      socket.emit('call_participants', { callId, participants: others });
+      socket.to(`call:${callId}`).emit('call_user_joined', { callId, userId: socket.userId });
+    });
+
+    socket.on('call_leave', (data: { callId: string }) => {
+      if (!socket.userId) return;
+      const callId = data.callId;
+      socket.leave(`call:${callId}`);
+      const participants = callParticipants.get(callId);
+      if (participants) {
+        participants.delete(socket.userId);
+        socket.to(`call:${callId}`).emit('call_user_left', { callId, userId: socket.userId });
+        if (participants.size === 0) {
+          callParticipants.delete(callId);
+        }
+      }
+      if ((socket as any).callIds) {
+        (socket as any).callIds.delete(callId);
+      }
+    });
+
+    socket.on('webrtc_offer', (data: { callId: string; toUserId: string; sdp: any }) => {
+      if (!socket.userId) return;
+      emitToUser(data.toUserId, 'webrtc_offer', {
+        callId: data.callId,
+        fromUserId: socket.userId,
+        sdp: data.sdp,
+      });
+    });
+
+    socket.on('webrtc_answer', (data: { callId: string; toUserId: string; sdp: any }) => {
+      if (!socket.userId) return;
+      emitToUser(data.toUserId, 'webrtc_answer', {
+        callId: data.callId,
+        fromUserId: socket.userId,
+        sdp: data.sdp,
+      });
+    });
+
+    socket.on('webrtc_ice', (data: { callId: string; toUserId: string; candidate: any }) => {
+      if (!socket.userId) return;
+      emitToUser(data.toUserId, 'webrtc_ice', {
+        callId: data.callId,
+        fromUserId: socket.userId,
+        candidate: data.candidate,
+      });
     });
   });
 

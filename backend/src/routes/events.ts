@@ -21,6 +21,42 @@ router.get('/', authMiddleware, roleMiddleware('organizer'), async (req: AuthReq
   }
 });
 
+// Get my applied event ids (worker)
+router.get('/my/applications', authMiddleware, roleMiddleware('worker'), async (req: AuthRequest, res: Response) => {
+  try {
+    const result = await db.execute({
+      sql: `SELECT DISTINCT event_id FROM applications WHERE worker_id = ? AND event_id IS NOT NULL`,
+      args: [req.user!.id],
+    });
+
+    const eventIds = result.rows.map(row => (row as any).event_id).filter(Boolean);
+    res.json({ eventIds });
+  } catch (error: any) {
+    console.error('Get my event applications error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get my event applications (worker)
+router.get('/my/applications/details', authMiddleware, roleMiddleware('worker'), async (req: AuthRequest, res: Response) => {
+  try {
+    const result = await db.execute({
+      sql: `SELECT a.id as application_id, a.status, a.applied_at,
+            e.id as event_id, e.title, e.event_date, e.location, e.venue, e.job_type
+            FROM applications a
+            JOIN events e ON a.event_id = e.id
+            WHERE a.worker_id = ?
+            ORDER BY a.applied_at DESC`,
+      args: [req.user!.id],
+    });
+
+    res.json({ applications: result.rows });
+  } catch (error: any) {
+    console.error('Get my event applications error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Get single event
 router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
@@ -115,9 +151,6 @@ router.post('/', authMiddleware, roleMiddleware('organizer'), async (req: AuthRe
       });
     }
 
-    // Auto-create event group chat
-    await createEventGroup(eventId, title, req.user!.id);
-
     res.status(201).json({ message: 'Event created', eventId });
   } catch (error: any) {
     console.error('Create event error:', error);
@@ -180,6 +213,38 @@ router.delete('/:id', authMiddleware, roleMiddleware('organizer'), async (req: A
     res.json({ message: 'Event deleted' });
   } catch (error: any) {
     console.error('Delete event error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Create event's group conversation (organizer)
+router.post('/:id/conversation', authMiddleware, roleMiddleware('organizer'), async (req: AuthRequest, res: Response) => {
+  try {
+    const eventId = req.params.id;
+    const eventResult = await db.execute({
+      sql: 'SELECT id, title FROM events WHERE id = ? AND organizer_id = ?',
+      args: [eventId, req.user!.id],
+    });
+
+    if (eventResult.rows.length === 0) {
+      res.status(404).json({ error: 'Event not found or not authorized' });
+      return;
+    }
+
+    const existing = await db.execute({
+      sql: `SELECT id FROM conversations WHERE event_id = ? AND type = 'event'`,
+      args: [eventId],
+    });
+    if (existing.rows.length > 0) {
+      res.json({ conversationId: (existing.rows[0] as any).id });
+      return;
+    }
+
+    const eventTitle = (eventResult.rows[0] as any).title;
+    const conversationId = await createEventGroup(eventId, eventTitle, req.user!.id);
+    res.status(201).json({ conversationId });
+  } catch (error: any) {
+    console.error('Create event conversation error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

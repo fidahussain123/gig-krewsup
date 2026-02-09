@@ -161,6 +161,29 @@ router.put('/worker-profile', authMiddleware, async (req: AuthRequest, res: Resp
   }
 });
 
+// Register device token for push notifications
+router.post('/device-token', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const { token, platform } = req.body;
+    if (!token || typeof token !== 'string') {
+      res.status(400).json({ error: 'Valid device token is required' });
+      return;
+    }
+
+    await db.execute({
+      sql: `INSERT INTO device_tokens (id, user_id, token, platform)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(token) DO UPDATE SET user_id = excluded.user_id`,
+      args: [uuidv4(), req.user!.id, token, platform || null],
+    });
+
+    res.json({ message: 'Device token saved' });
+  } catch (error: any) {
+    console.error('Save device token error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Get worker profile (organizer view)
 router.get('/worker/:id', authMiddleware, roleMiddleware('organizer'), async (req: AuthRequest, res: Response) => {
   try {

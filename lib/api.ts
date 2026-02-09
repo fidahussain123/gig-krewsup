@@ -145,6 +145,13 @@ class ApiClient {
     return this.request<{ pendingTotal: number }>('/users/wallet-summary');
   }
 
+  async registerDeviceToken(token: string, platform: string) {
+    return this.request('/users/device-token', {
+      method: 'POST',
+      body: JSON.stringify({ token, platform }),
+    });
+  }
+
   // Events endpoints
   async getEvents() {
     return this.request<{ events: any[] }>('/events');
@@ -221,6 +228,20 @@ class ApiClient {
 
   async getEventConversation(eventId: string) {
     return this.request<{ conversationId: string }>(`/events/${eventId}/conversation`);
+  }
+
+  async createEventConversation(eventId: string) {
+    return this.request<{ conversationId: string }>(`/events/${eventId}/conversation`, {
+      method: 'POST',
+    });
+  }
+
+  async getMyEventApplications() {
+    return this.request<{ eventIds: string[] }>('/events/my/applications');
+  }
+
+  async getMyEventApplicationsDetails() {
+    return this.request<{ applications: any[] }>('/events/my/applications/details');
   }
 
   // Event applicants endpoints

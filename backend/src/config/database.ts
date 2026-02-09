@@ -41,6 +41,20 @@ export async function ensureSchema(): Promise<void> {
       sql: 'CREATE INDEX IF NOT EXISTS idx_worker_photos_user ON worker_photos(user_id)',
       args: [],
     });
+    await db.execute({
+      sql: `CREATE TABLE IF NOT EXISTS device_tokens (
+            id TEXT PRIMARY KEY,
+            user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+            token TEXT NOT NULL UNIQUE,
+            platform TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+          )`,
+      args: [],
+    });
+    await db.execute({
+      sql: 'CREATE INDEX IF NOT EXISTS idx_device_tokens_user ON device_tokens(user_id)',
+      args: [],
+    });
     await runColumnMigrations('applications', [
       { name: 'event_id', sql: 'ALTER TABLE applications ADD COLUMN event_id TEXT' },
       { name: 'user_id', sql: 'ALTER TABLE applications ADD COLUMN user_id TEXT' },

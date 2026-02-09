@@ -9,22 +9,29 @@ import Icon from '../components/Icon';
 const WorkerDashboard: React.FC = () => {
   const router = useRouter();
   const [events, setEvents] = useState<any[]>([]);
+  const [allEvents, setAllEvents] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [gender, setGender] = useState<string>('');
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [applyingId, setApplyingId] = useState<string | null>(null);
+  const [appliedEventIds, setAppliedEventIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadGigs();
     loadProfile();
     loadSaved();
+    loadApplied();
   }, []);
+
+  useEffect(() => {
+    setEvents(allEvents.filter(event => !appliedEventIds.has(event.id)));
+  }, [allEvents, appliedEventIds]);
 
   const loadGigs = async () => {
     setIsLoading(true);
     const result = await api.browseEvents();
     if (result.data?.events) {
-      setEvents(result.data.events);
+      setAllEvents(result.data.events);
     }
     setIsLoading(false);
   };
@@ -48,6 +55,13 @@ const WorkerDashboard: React.FC = () => {
     }
   };
 
+  const loadApplied = async () => {
+    const result = await api.getMyEventApplications();
+    if (result.data?.eventIds) {
+      setAppliedEventIds(new Set(result.data.eventIds));
+    }
+  };
+
   const toggleSave = async (eventId: string) => {
     setSavedIds(prev => {
       const next = new Set(prev);
@@ -64,8 +78,9 @@ const WorkerDashboard: React.FC = () => {
   const handleApply = async (eventId: string) => {
     setApplyingId(eventId);
     const result = await api.applyToEvent(eventId);
-    if (!result.data) {
-      // noop: keep simple for now
+    if (result.data) {
+      setAppliedEventIds(prev => new Set(prev).add(eventId));
+      setEvents(prev => prev.filter(event => event.id !== eventId));
     }
     setApplyingId(null);
   };
@@ -97,8 +112,11 @@ const WorkerDashboard: React.FC = () => {
               </Text>
             </View>
           </View>
-          <Pressable className="h-11 w-11 items-center justify-center rounded-full bg-slate-50">
-            <Icon name="notifications" className="text-slate-600 text-2xl" />
+          <Pressable
+            onPress={() => router.push('/worker/applications')}
+            className="px-4 py-2 rounded-full bg-primary/10"
+          >
+            <Text className="text-primary text-xs font-bold uppercase tracking-widest">My Applications</Text>
           </Pressable>
         </View>
 
