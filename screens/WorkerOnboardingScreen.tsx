@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { useAuth } from '../contexts/AuthContext';
 import { uploadFile, UploadAsset } from '../lib/storage';
@@ -17,7 +17,7 @@ const WorkerOnboardingScreen: React.FC = () => {
   const [aadhaarPreview, setAadhaarPreview] = useState<string>('');
   const [additionalPhotos, setAdditionalPhotos] = useState<UploadAsset[]>([]);
   const [additionalPreviews, setAdditionalPreviews] = useState<string[]>([]);
-  
+
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -72,7 +72,7 @@ const WorkerOnboardingScreen: React.FC = () => {
   const handleSubmit = async () => {
     setIsLoading(true);
     setError('');
-    
+
     if (!profilePhoto || !aadhaarFile || additionalPhotos.length === 0) {
       setError('Profile photo, Aadhaar, and additional photos are required');
       setIsLoading(false);
@@ -125,13 +125,13 @@ const WorkerOnboardingScreen: React.FC = () => {
       aadhaarDocUrl,
       workerPhotoUrls,
     });
-    
+
     if (result.success) {
       router.replace('/worker');
     } else {
       setError(result.error || 'Failed to complete onboarding');
     }
-    
+
     setIsLoading(false);
   };
 
@@ -148,7 +148,7 @@ const WorkerOnboardingScreen: React.FC = () => {
   );
 
   return (
-    <View className="flex-1 bg-slate-50">
+    <KeyboardAvoidingView className="flex-1 bg-slate-50" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View className="px-6 pt-10 pb-6 bg-white border-b border-slate-100">
         <View className="flex-row items-center gap-4 mb-6">
           <View className="h-14 w-14 rounded-2xl bg-accent/20 items-center justify-center">
@@ -166,7 +166,7 @@ const WorkerOnboardingScreen: React.FC = () => {
         </View>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 32 }}>
+      <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 48 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
         {error && (
           <View className="mb-4 p-4 bg-red-50 rounded-xl">
             <Text className="text-red-600 text-sm font-medium">{error}</Text>
@@ -342,9 +342,8 @@ const WorkerOnboardingScreen: React.FC = () => {
           <Pressable
             onPress={handleSubmit}
             disabled={!isFormValid || isLoading}
-            className={`w-full py-4 rounded-2xl items-center justify-center ${
-              isFormValid && !isLoading ? 'bg-primary' : 'bg-slate-100'
-            }`}
+            className={`w-full py-4 rounded-2xl items-center justify-center ${isFormValid && !isLoading ? 'bg-primary' : 'bg-slate-100'
+              }`}
           >
             {isLoading ? (
               <ActivityIndicator color="#ffffff" />
@@ -359,7 +358,7 @@ const WorkerOnboardingScreen: React.FC = () => {
           </Pressable>
         </View>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 

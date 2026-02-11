@@ -37,6 +37,7 @@ const OrganizerLayout: React.FC = () => {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: '#008080',
+        tabBarHideOnKeyboard: true,
         tabBarStyle: { backgroundColor: '#ffffff', borderTopColor: '#e2e8f0' },
       }}
     >

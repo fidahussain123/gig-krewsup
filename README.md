@@ -10,6 +10,8 @@ View your app in AI Studio: https://ai.studio/apps/drive/1bJcHWPY-U94rvirqvyLkB_
 
 ## Run Locally
 
+<!-- API URL: https://gig-krewsup.onrender.com/api -->
+
 **Prerequisites:**  Node.js
 
 

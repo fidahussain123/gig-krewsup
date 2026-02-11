@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import api from '../lib/api';
 import Icon from '../components/Icon';
 
@@ -60,7 +60,7 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({ role }) => {
   const filters = ['All', 'Events', 'Direct', 'Unread'];
 
   return (
-    <View className="flex-1 bg-white relative">
+    <KeyboardAvoidingView className="flex-1 bg-white relative" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View className="px-6 pt-12 pb-4">
         <View className="flex-row items-center justify-between mb-6">
           <Text className="text-3xl font-extrabold tracking-tight text-slate-900">Messages</Text>
@@ -80,13 +80,11 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({ role }) => {
             <Pressable
               key={idx}
               onPress={() => setFilter(cat)}
-              className={`rounded-full px-6 py-2.5 mr-3 ${
-                filter === cat ? 'bg-primary' : 'bg-slate-50'
-              }`}
+              className={`rounded-full px-6 py-2.5 mr-3 ${filter === cat ? 'bg-primary' : 'bg-slate-50'
+                }`}
             >
-              <Text className={`text-xs font-bold uppercase tracking-widest ${
-                filter === cat ? 'text-white' : 'text-slate-400'
-              }`}>
+              <Text className={`text-xs font-bold uppercase tracking-widest ${filter === cat ? 'text-white' : 'text-slate-400'
+                }`}>
                 {cat}
               </Text>
             </Pressable>
@@ -94,7 +92,7 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({ role }) => {
         </ScrollView>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 120 }}>
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 120 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
         {isLoading ? (
           <View className="items-center justify-center py-12">
             <ActivityIndicator size="large" color="#008080" />
@@ -158,7 +156,7 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({ role }) => {
       <Pressable className="absolute bottom-8 right-6 h-16 w-16 items-center justify-center rounded-3xl bg-primary">
         <Icon name="add" className="text-white text-3xl font-bold" />
       </Pressable>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 

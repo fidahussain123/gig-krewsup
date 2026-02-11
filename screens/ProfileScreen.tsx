@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../lib/api';
@@ -21,7 +21,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ role }) => {
   const [photoPreview, setPhotoPreview] = useState<string>('');
   const [profile, setProfile] = useState<any>(null);
   const [photos, setPhotos] = useState<any[]>([]);
-  
+
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -75,16 +75,16 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ role }) => {
 
   const handleSave = async () => {
     setIsLoading(true);
-    
+
     let avatarUrl = profile?.avatarUrl || '';
-    
+
     if (profilePhoto) {
       const uploadResult = await uploadFile(profilePhoto);
       if (uploadResult.success && uploadResult.fileUrl) {
         avatarUrl = uploadResult.fileUrl;
       }
     }
-    
+
     await api.updateProfile({
       name: formData.name,
       phone: formData.phone,
@@ -105,7 +105,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ role }) => {
         experienceYears: formData.experienceYears ? Number(formData.experienceYears) : null,
       });
     }
-    
+
     setIsEditing(false);
     setIsLoading(false);
     loadProfile();
@@ -121,7 +121,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ role }) => {
   const currentAvatar = photoPreview || user?.avatarUrl;
 
   return (
-    <View className="flex-1 bg-slate-50">
+    <KeyboardAvoidingView className="flex-1 bg-slate-50" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View className="px-6 pt-12 pb-6 bg-white border-b border-slate-100">
         <View className="flex-row items-center justify-between mb-6">
           <Text className="text-2xl font-extrabold text-slate-900">Profile</Text>
@@ -179,7 +179,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ role }) => {
         </View>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 32 }}>
+      <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 48 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
         {isEditing ? (
           <View className="space-y-4">
             {role === 'organizer' && (
@@ -324,7 +324,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ role }) => {
                   { label: 'Privacy & Security', icon: 'lock', onPress: undefined }
                 ].map((item, idx) => (
                   <Pressable
-                    key={idx} 
+                    key={idx}
                     onPress={item.onPress}
                     className="flex-row items-center justify-between w-full p-5 border-b border-slate-50"
                   >
@@ -349,7 +349,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ role }) => {
                   { label: 'Community Guidelines', icon: 'groups' }
                 ].map((item, idx) => (
                   <Pressable
-                    key={idx} 
+                    key={idx}
                     className="flex-row items-center justify-between w-full p-5 border-b border-slate-50"
                   >
                     <View className="flex-row items-center gap-4">
@@ -374,7 +374,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ role }) => {
           <Text className="text-red-500 font-extrabold text-lg">Sign Out</Text>
         </Pressable>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 

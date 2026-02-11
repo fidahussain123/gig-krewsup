@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, Image, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import MapView, { Marker } from 'react-native-maps';
@@ -233,7 +233,7 @@ const CreateEventScreen: React.FC = () => {
   }
 
   return (
-    <View className="flex-1 bg-slate-50">
+    <KeyboardAvoidingView className="flex-1 bg-slate-50" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View className="bg-white px-6 py-4 flex-row items-center border-b border-slate-100">
         <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full">
           <Icon name="arrow_back_ios_new" className="text-slate-700" />
@@ -241,7 +241,7 @@ const CreateEventScreen: React.FC = () => {
         <Text className="text-lg font-extrabold text-slate-900 flex-1 text-center pr-10">Create Event</Text>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 24 }}>
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
         {error && (
           <View className="mx-4 mt-4 p-4 bg-red-50 rounded-xl">
             <Text className="text-red-600 text-sm font-medium">{error}</Text>
@@ -517,7 +517,7 @@ const CreateEventScreen: React.FC = () => {
           </Pressable>
         </View>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 

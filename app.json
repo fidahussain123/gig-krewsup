@@ -19,14 +19,15 @@
       "permissions": [
         "RECORD_AUDIO"
       ],
-      "package": "com.fidasp.krewsup"
+      "package": "com.fidasp.krewsup",
+      "softwareKeyboardLayoutMode": "pan"
     },
     "web": {
       "bundler": "metro"
     },
     "extra": {
-      "apiUrl": "https://gig-krewsup.onrender.com/api",
-      "socketUrl": "https://gig-krewsup.onrender.com",
+      "apiUrl": "https://gig-krewsup.onrender.com/api/api",
+      "socketUrl": "https://gig-krewsup.onrender.com/api",
       "eas": {
         "projectId": "21f05b5d-b4d1-4ee2-9a99-1be0a5900871"
       }

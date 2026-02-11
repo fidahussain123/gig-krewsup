@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { useAuth } from '../contexts/AuthContext';
 import { uploadFile, UploadAsset } from '../lib/storage';
@@ -13,7 +13,7 @@ const OrganizerOnboardingScreen: React.FC = () => {
   const [error, setError] = useState('');
   const [profilePhoto, setProfilePhoto] = useState<UploadAsset | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>('');
-  
+
   const [formData, setFormData] = useState({
     companyName: '',
     organizerType: '',
@@ -51,9 +51,9 @@ const OrganizerOnboardingScreen: React.FC = () => {
   const handleSubmit = async () => {
     setIsLoading(true);
     setError('');
-    
+
     let avatarUrl = '';
-    
+
     // Upload photo if selected
     if (profilePhoto) {
       const uploadResult = await uploadFile(profilePhoto);
@@ -65,7 +65,7 @@ const OrganizerOnboardingScreen: React.FC = () => {
         return;
       }
     }
-    
+
     const result = await completeOnboarding({
       name: formData.companyName,
       email: formData.email,
@@ -76,20 +76,20 @@ const OrganizerOnboardingScreen: React.FC = () => {
       organizerType: formData.organizerType,
       avatarUrl,
     });
-    
+
     if (result.success) {
       router.replace('/organizer');
     } else {
       setError(result.error || 'Failed to complete onboarding');
     }
-    
+
     setIsLoading(false);
   };
 
   const isFormValid = formData.companyName && formData.email && formData.organizerType;
 
   return (
-    <View className="flex-1 bg-slate-50">
+    <KeyboardAvoidingView className="flex-1 bg-slate-50" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View className="px-6 pt-10 pb-6 bg-white border-b border-slate-100">
         <View className="flex-row items-center gap-4 mb-6">
           <View className="h-14 w-14 rounded-2xl bg-primary/10 items-center justify-center">
@@ -107,7 +107,7 @@ const OrganizerOnboardingScreen: React.FC = () => {
         </View>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 32 }}>
+      <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 48 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
         {error && (
           <View className="mb-4 p-4 bg-red-50 rounded-xl">
             <Text className="text-red-600 text-sm font-medium">{error}</Text>
@@ -206,9 +206,8 @@ const OrganizerOnboardingScreen: React.FC = () => {
           <Pressable
             onPress={handleSubmit}
             disabled={!isFormValid || isLoading}
-            className={`w-full py-4 rounded-2xl items-center justify-center ${
-              isFormValid && !isLoading ? 'bg-primary' : 'bg-slate-100'
-            }`}
+            className={`w-full py-4 rounded-2xl items-center justify-center ${isFormValid && !isLoading ? 'bg-primary' : 'bg-slate-100'
+              }`}
           >
             {isLoading ? (
               <ActivityIndicator color="#ffffff" />
@@ -220,8 +219,8 @@ const OrganizerOnboardingScreen: React.FC = () => {
             )}
           </Pressable>
         </View>
-      </ScrollView>
-    </View>
+      </ScrollView >
+    </KeyboardAvoidingView >
   );
 };
 
