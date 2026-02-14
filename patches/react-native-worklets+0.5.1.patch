@@ -1,0 +1,104 @@
+diff --git a/node_modules/react-native-worklets/plugin/index.js b/node_modules/react-native-worklets/plugin/index.js
+index 6419dc4..8ba379b 100644
+--- a/node_modules/react-native-worklets/plugin/index.js
++++ b/node_modules/react-native-worklets/plugin/index.js
+@@ -407,6 +407,11 @@ var require_globals = __commonJS({
+     ]);
+     var notCapturedIdentifiers_DEPRECATED = ["_IS_FABRIC"];
+     function initializeState(state) {
++      if (!state) {
++        // During Expo config serialization, state might be undefined
++        // Return early to avoid errors
++        return;
++      }
+       state.workletNumber = 1;
+       state.classesToWorkletize = [];
+       initializeGlobals();
+@@ -1017,6 +1022,9 @@ var require_workletSubstitution = __commonJS({
+     var utils_1 = require_utils();
+     var workletFactoryCall_1 = require_workletFactoryCall();
+     function processIfWithWorkletDirective(path, state) {
++      if (!path || !path.node || !path.node.body) {
++        return false;
++      }
+       if (!(0, types_12.isBlockStatement)(path.node.body)) {
+         return false;
+       }
+@@ -1205,6 +1213,9 @@ var require_autoworkletization = __commonJS({
+       return false;
+     }
+     function processCalleesAutoworkletizableCallbacks(path, state) {
++      if (!path || !path.node || !path.node.callee) {
++        return;
++      }
+       const callee = (0, types_12.isSequenceExpression)(path.node.callee) ? path.node.callee.expressions[path.node.callee.expressions.length - 1] : path.node.callee;
+       const name = "name" in callee ? callee.name : "property" in callee && "name" in callee.property ? callee.property.name : void 0;
+       if (name === void 0) {
+@@ -1444,6 +1455,9 @@ var require_contextObject = __commonJS({
+     var types_12 = require("@babel/types");
+     exports2.contextObjectMarker = "__workletContextObject";
+     function processIfWorkletContextObject(path, _state) {
++      if (!path || !path.node) {
++        return false;
++      }
+       if (!isContextObject(path.node)) {
+         return false;
+       }
+@@ -1732,6 +1746,9 @@ module.exports = function WorkletsBabelPlugin() {
+     visitor: {
+       CallExpression: {
+         enter(path, state) {
++          if (!state || !state.opts || !path || !path.node) {
++            return;
++          }
+           runWithTaggedExceptions(() => {
+             (0, autoworkletization_1.processCalleesAutoworkletizableCallbacks)(path, state);
+             if (state.opts.substituteWebPlatformChecks) {
+@@ -1742,11 +1759,17 @@ module.exports = function WorkletsBabelPlugin() {
+       },
+       [types_1.WorkletizableFunction]: {
+         enter(path, state) {
++          if (!state || !state.opts || !path || !path.node) {
++            return;
++          }
+           runWithTaggedExceptions(() => (0, workletSubstitution_1.processIfWithWorkletDirective)(path, state) || (0, autoworkletization_1.processIfAutoworkletizableCallback)(path, state));
+         }
+       },
+       ObjectExpression: {
+         enter(path, state) {
++          if (!state || !state.opts || !path || !path.node) {
++            return;
++          }
+           runWithTaggedExceptions(() => {
+             (0, contextObject_1.processIfWorkletContextObject)(path, state);
+           });
+@@ -1754,6 +1777,9 @@ module.exports = function WorkletsBabelPlugin() {
+       },
+       ClassDeclaration: {
+         enter(path, state) {
++          if (!state || !state.opts || !path || !path.node) {
++            return;
++          }
+           runWithTaggedExceptions(() => {
+             (0, class_1.processIfWorkletClass)(path, state);
+           });
+@@ -1761,6 +1787,9 @@ module.exports = function WorkletsBabelPlugin() {
+       },
+       Program: {
+         enter(path, state) {
++          if (!state || !state.opts || !path || !path.node) {
++            return;
++          }
+           runWithTaggedExceptions(() => {
+             (0, file_1.processIfWorkletFile)(path, state);
+           });
+@@ -1768,6 +1797,9 @@ module.exports = function WorkletsBabelPlugin() {
+       },
+       JSXAttribute: {
+         enter(path, state) {
++          if (!state || !state.opts || !path || !path.node) {
++            return;
++          }
+           runWithTaggedExceptions(() => (0, inlineStylesWarning_1.processInlineStylesWarning)(path, state));
+         }
+       }

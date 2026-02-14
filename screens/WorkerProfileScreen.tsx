@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../lib/api';
 import Icon from '../components/Icon';
 
 const WorkerProfileScreen: React.FC = () => {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const insets = useSafeAreaInsets();
   const [worker, setWorker] = useState<any>(null);
   const [photos, setPhotos] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,14 +49,16 @@ const WorkerProfileScreen: React.FC = () => {
 
   return (
     <View className="flex-1 bg-slate-50">
-      <View className="bg-white px-6 py-4 flex-row items-center border-b border-slate-100">
+      <View className="bg-white px-6 pb-4 flex-row items-center border-b border-slate-100" style={{ paddingTop: insets.top + 10 }}>
         <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full">
           <Icon name="arrow_back_ios_new" className="text-slate-700" />
         </Pressable>
-        <Text className="text-lg font-extrabold text-slate-900 flex-1 text-center pr-10">Worker Profile</Text>
+        <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-lg text-slate-900 flex-1 text-center pr-10">
+          Worker Profile
+        </Text>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 24 }}>
+      <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 24 + insets.bottom + 90 }}>
         <View className="bg-white rounded-3xl p-6 shadow-sm ring-1 ring-slate-100">
           <View className="flex-row items-center gap-4">
             <View className="h-20 w-20 rounded-3xl bg-slate-100 overflow-hidden">

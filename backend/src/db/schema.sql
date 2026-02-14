@@ -51,6 +51,8 @@ CREATE TABLE IF NOT EXISTS events (
   event_date TEXT,
   start_time TEXT,
   end_time TEXT,
+  latitude REAL,
+  longitude REAL,
   image_url TEXT,
   status TEXT DEFAULT 'draft' CHECK(status IN ('draft', 'published', 'cancelled', 'completed')),
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -151,6 +153,7 @@ CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_events_organizer ON events(organizer_id);
 CREATE INDEX IF NOT EXISTS idx_events_status ON events(status);
+CREATE INDEX IF NOT EXISTS idx_events_location ON events(latitude, longitude);
 CREATE INDEX IF NOT EXISTS idx_gigs_event ON gigs(event_id);
 CREATE INDEX IF NOT EXISTS idx_gigs_status ON gigs(status);
 CREATE INDEX IF NOT EXISTS idx_applications_gig ON applications(gig_id);

@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../lib/api';
 import { uploadFile, UploadAsset } from '../lib/storage';
@@ -14,6 +15,7 @@ interface ProfileScreenProps {
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({ role }) => {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { logout, user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -122,16 +124,22 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ role }) => {
 
   return (
     <KeyboardAvoidingView className="flex-1 bg-slate-50" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View className="px-6 pt-12 pb-6 bg-white border-b border-slate-100">
+      <View className="px-6 pb-6 bg-white border-b border-slate-100" style={{ paddingTop: insets.top + 14 }}>
         <View className="flex-row items-center justify-between mb-6">
-          <Text className="text-2xl font-extrabold text-slate-900">Profile</Text>
+          <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-2xl text-slate-900">
+            Profile
+          </Text>
           {!isEditing ? (
             <Pressable onPress={() => setIsEditing(true)}>
-              <Text className="text-primary font-bold text-sm">Edit</Text>
+              <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary text-sm">
+                Edit
+              </Text>
             </Pressable>
           ) : (
             <Pressable onPress={handleSave} disabled={isLoading}>
-              <Text className="text-primary font-bold text-sm">{isLoading ? 'Saving...' : 'Save'}</Text>
+              <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary text-sm">
+                {isLoading ? 'Saving...' : 'Save'}
+              </Text>
             </Pressable>
           )}
         </View>
@@ -164,52 +172,73 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ role }) => {
               <TextInput
                 value={formData.name}
                 onChangeText={(value) => setFormData(prev => ({ ...prev, name: value }))}
-                className="w-full text-2xl font-extrabold text-slate-900 border-b-2 border-primary/20 pb-1"
+                style={{ fontFamily: 'Inter_800ExtraBold' }}
+                className="w-full text-2xl text-slate-900 border-b-2 border-primary/20 pb-1"
                 placeholder="Your name"
               />
             ) : (
-              <Text className="text-2xl font-extrabold text-slate-900">{displayName}</Text>
+              <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-2xl text-slate-900">
+                {displayName}
+              </Text>
             )}
-            <Text className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-1">{roleLabel}</Text>
+            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-sm text-slate-400 uppercase tracking-widest mt-1">
+              {roleLabel}
+            </Text>
             <View className="flex-row items-center gap-1.5 mt-3 bg-primary/5 px-3 py-1 rounded-xl">
               <Icon name="verified" className="text-primary text-sm" />
-              <Text className="text-[10px] font-extrabold uppercase tracking-widest text-primary">Identity Verified</Text>
+              <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-[10px] uppercase tracking-widest text-primary">
+                Identity Verified
+              </Text>
             </View>
           </View>
         </View>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 48 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ padding: 24, paddingBottom: 48 + insets.bottom + 80 }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+      >
         {isEditing ? (
           <View className="space-y-4">
             {role === 'organizer' && (
               <>
                 <View className="flex flex-col">
-                  <Text className="text-sm font-extrabold text-slate-900 pb-2 px-1">Company Name</Text>
+                  <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-sm text-slate-900 pb-2 px-1">
+                    Company Name
+                  </Text>
                   <TextInput
                     value={formData.companyName}
                     onChangeText={(value) => setFormData(prev => ({ ...prev, companyName: value }))}
-                    className="w-full rounded-2xl border border-slate-100 bg-white h-14 px-5 text-base font-medium"
+                    style={{ fontFamily: 'Inter_500Medium' }}
+                    className="w-full rounded-2xl border border-slate-100 bg-white h-14 px-5 text-base"
                     placeholder="Company name"
                   />
                 </View>
                 <View className="flex flex-col">
-                  <Text className="text-sm font-extrabold text-slate-900 pb-2 px-1">Organizer Type</Text>
+                  <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-sm text-slate-900 pb-2 px-1">
+                    Organizer Type
+                  </Text>
                   <TextInput
                     value={formData.organizerType}
                     onChangeText={(value) => setFormData(prev => ({ ...prev, organizerType: value }))}
-                    className="w-full rounded-2xl border border-slate-100 bg-white h-14 px-5 text-base font-medium"
+                    style={{ fontFamily: 'Inter_500Medium' }}
+                    className="w-full rounded-2xl border border-slate-100 bg-white h-14 px-5 text-base"
                     placeholder="Organizer type"
                   />
                 </View>
               </>
             )}
             <View className="flex flex-col">
-              <Text className="text-sm font-extrabold text-slate-900 pb-2 px-1">Phone</Text>
+              <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-sm text-slate-900 pb-2 px-1">
+                Phone
+              </Text>
               <TextInput
                 value={formData.phone}
                 onChangeText={(value) => setFormData(prev => ({ ...prev, phone: value }))}
-                className="w-full rounded-2xl border border-slate-100 bg-white h-14 px-5 text-base font-medium"
+                style={{ fontFamily: 'Inter_500Medium' }}
+                className="w-full rounded-2xl border border-slate-100 bg-white h-14 px-5 text-base"
                 placeholder="Phone number"
               />
             </View>

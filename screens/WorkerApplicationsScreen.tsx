@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../lib/api';
 import Icon from '../components/Icon';
 
@@ -12,6 +13,7 @@ const statusStyles: Record<string, string> = {
 
 const WorkerApplicationsScreen: React.FC = () => {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [isLoading, setIsLoading] = useState(true);
   const [applications, setApplications] = useState<any[]>([]);
 
@@ -43,14 +45,16 @@ const WorkerApplicationsScreen: React.FC = () => {
 
   return (
     <View className="flex-1 bg-slate-50">
-      <View className="bg-white px-6 py-4 flex-row items-center border-b border-slate-100">
+      <View className="bg-white px-6 pb-4 flex-row items-center border-b border-slate-100" style={{ paddingTop: insets.top + 10 }}>
         <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full">
           <Icon name="arrow_back_ios_new" className="text-slate-700" />
         </Pressable>
-        <Text className="text-lg font-extrabold text-slate-900 flex-1 text-center pr-10">My Applications</Text>
+        <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-lg text-slate-900 flex-1 text-center pr-10">
+          My Applications
+        </Text>
       </View>
 
-      <ScrollView className="flex-1 px-6 py-6" contentContainerStyle={{ paddingBottom: 24 }}>
+      <ScrollView className="flex-1 px-6 py-6" contentContainerStyle={{ paddingBottom: 24 + insets.bottom + 90 }}>
         {isLoading ? (
           <View className="items-center justify-center py-12">
             <ActivityIndicator size="large" color="#008080" />

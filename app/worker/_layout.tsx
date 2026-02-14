@@ -2,11 +2,13 @@ import React from 'react';
 import { Tabs, Redirect, useSegments } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 
 const WorkerLayout: React.FC = () => {
   const { isLoggedIn, role, isOnboarded, isLoading } = useAuth();
   const segments = useSegments();
+  const insets = useSafeAreaInsets();
 
   if (isLoading) {
     return (
@@ -38,7 +40,20 @@ const WorkerLayout: React.FC = () => {
         headerShown: false,
         tabBarActiveTintColor: '#008080',
         tabBarHideOnKeyboard: true,
-        tabBarStyle: { backgroundColor: '#ffffff', borderTopColor: '#e2e8f0' },
+        tabBarLabelStyle: {
+          fontFamily: 'Inter_600SemiBold',
+          fontSize: 10,
+          letterSpacing: 0.2,
+          marginTop: -2,
+        },
+        tabBarStyle: {
+          backgroundColor: '#ffffff',
+          borderTopColor: '#e2e8f0',
+          borderTopWidth: 1,
+          paddingTop: 8,
+          paddingBottom: Math.max(insets.bottom, 10),
+          height: 62 + Math.max(insets.bottom, 10),
+        },
       }}
     >
       <Tabs.Screen

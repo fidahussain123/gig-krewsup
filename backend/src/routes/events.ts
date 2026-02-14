@@ -106,7 +106,9 @@ router.post('/', authMiddleware, roleMiddleware('organizer'), async (req: AuthRe
       paymentMethod,
       subtotal,
       commission,
-      total
+      total,
+      latitude,
+      longitude,
     } = req.body;
 
     if (!title) {
@@ -120,13 +122,14 @@ router.post('/', authMiddleware, roleMiddleware('organizer'), async (req: AuthRe
     await db.execute({
       sql: `INSERT INTO events (
         id, organizer_id, title, description, location, venue, 
-        event_date, end_date, start_time, end_time, image_url,
+        event_date, end_date, start_time, end_time, latitude, longitude, image_url,
         job_type, male_count, female_count, male_pay, female_pay,
         payment_method, subtotal, commission, total, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
         eventId, req.user!.id, title, description, location, venue,
-        eventDate, endDate, startTime, endTime, imageUrl,
+        eventDate, endDate, startTime, endTime,
+        latitude ?? null, longitude ?? null, imageUrl,
         jobType, maleCount || 0, femaleCount || 0, malePay || 0, femalePay || 0,
         paymentMethod || 'later', subtotal || 0, commission || 0, total || 0, 'published'
       ],
@@ -265,6 +268,65 @@ router.get('/browse/all', authMiddleware, async (req: AuthRequest, res: Response
     res.json({ events: result.rows });
   } catch (error: any) {
     console.error('Browse events error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get nearby events for worker based on lat/lng
+router.get('/nearby', authMiddleware, roleMiddleware('worker'), async (req: AuthRequest, res: Response) => {
+  try {
+    const lat = parseFloat(String(req.query.lat ?? ''));
+    const lng = parseFloat(String(req.query.lng ?? ''));
+    let radiusKm = parseFloat(String(req.query.radiusKm ?? '25'));
+
+    if (Number.isNaN(lat) || Number.isNaN(lng)) {
+      res.status(400).json({ error: 'Valid lat and lng are required' });
+      return;
+    }
+
+    if (Number.isNaN(radiusKm)) {
+      radiusKm = 25;
+    }
+
+    // Clamp radius between 5km and 100km
+    radiusKm = Math.max(5, Math.min(radiusKm, 100));
+
+    const result = await db.execute({
+      sql: `
+        SELECT 
+          e.*,
+          u.name as organizer_name,
+          op.company_name,
+          (
+            6371 * acos(
+              cos(radians(?)) * cos(radians(e.latitude)) * cos(radians(e.longitude) - radians(?))
+              + sin(radians(?)) * sin(radians(e.latitude))
+            )
+          ) AS distance_km
+        FROM events e
+        JOIN users u ON e.organizer_id = u.id
+        LEFT JOIN organizer_profiles op ON u.id = op.user_id
+        WHERE 
+          e.status = 'published'
+          AND e.latitude IS NOT NULL
+          AND e.longitude IS NOT NULL
+        HAVING distance_km <= ?
+        ORDER BY distance_km ASC, e.event_date ASC
+      `,
+      args: [lat, lng, lat, radiusKm],
+    });
+
+    const events = result.rows.map(row => {
+      const r: any = row;
+      return {
+        ...r,
+        distanceKm: typeof r.distance_km === 'number' ? r.distance_km : Number(r.distance_km ?? 0),
+      };
+    });
+
+    res.json({ events });
+  } catch (error: any) {
+    console.error('Nearby events error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

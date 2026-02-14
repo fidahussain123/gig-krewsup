@@ -2,12 +2,14 @@
 import React, { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../lib/api';
 import Icon from '../components/Icon';
 
 const GigDetailsScreen: React.FC = () => {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const insets = useSafeAreaInsets();
   const [gig, setGig] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isApplying, setIsApplying] = useState(false);
@@ -47,11 +49,13 @@ const GigDetailsScreen: React.FC = () => {
 
   return (
     <View className="flex-1 bg-white">
-      <View className="px-6 py-4 flex-row items-center justify-between border-b border-slate-100">
+      <View className="px-6 pb-4 flex-row items-center justify-between border-b border-slate-100" style={{ paddingTop: insets.top + 10 }}>
         <Pressable onPress={() => router.back()} className="h-12 w-12 items-center justify-center rounded-full">
           <Icon name="arrow_back_ios_new" className="text-slate-700 text-xl" />
         </Pressable>
-        <Text className="text-xl font-extrabold text-slate-900">Gig Details</Text>
+        <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-xl text-slate-900">
+          Gig Details
+        </Text>
         <View className="flex-row gap-2">
           <Pressable className="h-12 w-12 items-center justify-center rounded-full">
             <Icon name="share" className="text-slate-700 text-xl" />
@@ -62,7 +66,7 @@ const GigDetailsScreen: React.FC = () => {
         </View>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 120 }}>
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 120 + insets.bottom + 90 }}>
         {isLoading ? (
           <View className="items-center justify-center py-12">
             <ActivityIndicator size="large" color="#008080" />
@@ -182,7 +186,10 @@ const GigDetailsScreen: React.FC = () => {
       </ScrollView>
 
       {gig && (
-        <View className="absolute bottom-0 left-0 right-0 bg-white border-t border-slate-100 p-6 flex-row items-center gap-6">
+        <View
+          className="absolute bottom-0 left-0 right-0 bg-white border-t border-slate-100 p-6 flex-row items-center gap-6"
+          style={{ paddingBottom: insets.bottom + 16 }}
+        >
           <View>
             <Text className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2">Pay Rate</Text>
             <Text className="text-2xl font-extrabold text-slate-900">

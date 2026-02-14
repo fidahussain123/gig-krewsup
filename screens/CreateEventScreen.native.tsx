@@ -5,12 +5,14 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import MapView, { Marker } from 'react-native-maps';
 import * as DocumentPicker from 'expo-document-picker';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../lib/api';
 import { uploadFile, UploadAsset } from '../lib/storage';
 import Icon from '../components/Icon';
 
 const CreateEventScreen: React.FC = () => {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -36,7 +38,7 @@ const CreateEventScreen: React.FC = () => {
     malePay: 0,
     femalePay: 0,
   });
-  const [startDateValue, setStartDateValue] = useState<Date | null>(null);
+  const [startDateValue, setStartDateValue] = useState<Date | null>(new Date());
   const [endDateValue, setEndDateValue] = useState<Date | null>(null);
   const [startTimeValue, setStartTimeValue] = useState<Date | null>(null);
   const [endTimeValue, setEndTimeValue] = useState<Date | null>(null);
@@ -71,6 +73,15 @@ const CreateEventScreen: React.FC = () => {
   };
 
   const formatDate = (value: Date) => value.toISOString().slice(0, 10);
+  const formatDateLabel = (value: Date | null) => {
+    if (!value) return '';
+    return value.toLocaleDateString('en-IN', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+  };
   const formatTime = (value: Date) =>
     value.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
@@ -183,6 +194,8 @@ const CreateEventScreen: React.FC = () => {
     }
 
     const finalJobType = formData.jobType === 'Other' ? formData.jobTypeOther.trim() : formData.jobType;
+    const latitude = selectedCoords?.latitude ?? null;
+    const longitude = selectedCoords?.longitude ?? null;
     const result = await api.createEvent({
       title: formData.title,
       description: formData.description,
@@ -202,6 +215,8 @@ const CreateEventScreen: React.FC = () => {
       subtotal,
       commission,
       total,
+      latitude,
+      longitude,
     });
 
     if (result.data) {
@@ -234,14 +249,16 @@ const CreateEventScreen: React.FC = () => {
 
   return (
     <KeyboardAvoidingView className="flex-1 bg-slate-50" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View className="bg-white px-6 py-4 flex-row items-center border-b border-slate-100">
+      <View className="bg-white px-6 pb-4 flex-row items-center border-b border-slate-100" style={{ paddingTop: insets.top + 10 }}>
         <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full">
           <Icon name="arrow_back_ios_new" className="text-slate-700" />
         </Pressable>
-        <Text className="text-lg font-extrabold text-slate-900 flex-1 text-center pr-10">Create Event</Text>
+        <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-lg text-slate-900 flex-1 text-center pr-10">
+          Create Event
+        </Text>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 + insets.bottom + 90 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
         {error && (
           <View className="mx-4 mt-4 p-4 bg-red-50 rounded-xl">
             <Text className="text-red-600 text-sm font-medium">{error}</Text>
@@ -280,22 +297,34 @@ const CreateEventScreen: React.FC = () => {
             multiline
           />
           <Text className="text-xs font-extrabold uppercase tracking-widest text-slate-400 mt-2">Schedule</Text>
-          <Pressable
-            onPress={() => setShowStartDatePicker(true)}
-            className="w-full rounded-2xl border border-slate-100 bg-white h-12 px-4 justify-center"
-          >
-            <Text className="text-sm font-medium text-slate-700">
-              {formData.startDate ? `Start Date: ${formData.startDate}` : 'Select Start Date *'}
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={() => setShowEndDatePicker(true)}
-            className="w-full rounded-2xl border border-slate-100 bg-white h-12 px-4 justify-center"
-          >
-            <Text className="text-sm font-medium text-slate-700">
-              {formData.endDate ? `End Date: ${formData.endDate}` : 'Select End Date'}
-            </Text>
-          </Pressable>
+          <View className="flex-row gap-3">
+            <Pressable
+              onPress={() => setShowStartDatePicker(true)}
+              className="flex-1 rounded-2xl border border-slate-100 bg-white h-14 px-4 justify-center"
+            >
+              <Text className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">
+                Start date
+              </Text>
+              <Text className="text-sm font-medium text-slate-800">
+                {startDateValue
+                  ? formatDateLabel(startDateValue)
+                  : 'Select start date'}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setShowEndDatePicker(true)}
+              className="flex-1 rounded-2xl border border-slate-100 bg-white h-14 px-4 justify-center"
+            >
+              <Text className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">
+                End date
+              </Text>
+              <Text className="text-sm font-medium text-slate-800">
+                {endDateValue
+                  ? formatDateLabel(endDateValue)
+                  : 'Optional'}
+              </Text>
+            </Pressable>
+          </View>
           <Pressable
             onPress={() => setShowStartTimePicker(true)}
             className="w-full rounded-2xl border border-slate-100 bg-white h-12 px-4 justify-center"
@@ -317,11 +346,19 @@ const CreateEventScreen: React.FC = () => {
               value={startDateValue || new Date()}
               mode="date"
               display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              minimumDate={new Date()}
               onChange={(event, date) => {
-                setShowStartDatePicker(false);
+                if (Platform.OS !== 'ios') {
+                  setShowStartDatePicker(false);
+                }
                 if (date) {
                   setStartDateValue(date);
                   handleChange('startDate', formatDate(date));
+                  // If end date is before start, reset it
+                  if (endDateValue && endDateValue < date) {
+                    setEndDateValue(null);
+                    handleChange('endDate', '');
+                  }
                 }
               }}
             />
@@ -331,8 +368,11 @@ const CreateEventScreen: React.FC = () => {
               value={endDateValue || startDateValue || new Date()}
               mode="date"
               display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              minimumDate={startDateValue || new Date()}
               onChange={(event, date) => {
-                setShowEndDatePicker(false);
+                if (Platform.OS !== 'ios') {
+                  setShowEndDatePicker(false);
+                }
                 if (date) {
                   setEndDateValue(date);
                   handleChange('endDate', formatDate(date));

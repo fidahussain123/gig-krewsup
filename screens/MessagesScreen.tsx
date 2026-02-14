@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../lib/api';
 import Icon from '../components/Icon';
 
@@ -20,6 +21,7 @@ interface Conversation {
 
 const MessagesScreen: React.FC<MessagesScreenProps> = ({ role }) => {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState('All');
@@ -61,9 +63,11 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({ role }) => {
 
   return (
     <KeyboardAvoidingView className="flex-1 bg-white relative" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View className="px-6 pt-12 pb-4">
+      <View className="px-6 pb-4" style={{ paddingTop: insets.top + 14 }}>
         <View className="flex-row items-center justify-between mb-6">
-          <Text className="text-3xl font-extrabold tracking-tight text-slate-900">Messages</Text>
+          <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-3xl tracking-tight text-slate-900">
+            Messages
+          </Text>
           <Pressable className="h-12 w-12 items-center justify-center rounded-full bg-slate-50">
             <Icon name="edit-note" className="text-slate-600 text-2xl" />
           </Pressable>
@@ -72,7 +76,8 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({ role }) => {
           <Icon name="search" className="text-slate-400 text-lg absolute left-4 top-4" />
           <TextInput
             placeholder="Search Messages"
-            className="w-full rounded-2xl bg-slate-50 py-4 pl-12 pr-6 text-sm font-bold text-slate-900"
+            style={{ fontFamily: 'Inter_600SemiBold' }}
+            className="w-full rounded-2xl bg-slate-50 py-4 pl-12 pr-6 text-sm text-slate-900"
           />
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="py-2">
@@ -83,8 +88,11 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({ role }) => {
               className={`rounded-full px-6 py-2.5 mr-3 ${filter === cat ? 'bg-primary' : 'bg-slate-50'
                 }`}
             >
-              <Text className={`text-xs font-bold uppercase tracking-widest ${filter === cat ? 'text-white' : 'text-slate-400'
-                }`}>
+              <Text
+                style={{ fontFamily: 'Inter_700Bold' }}
+                className={`text-xs uppercase tracking-widest ${filter === cat ? 'text-white' : 'text-slate-400'
+                  }`}
+              >
                 {cat}
               </Text>
             </Pressable>
@@ -92,7 +100,12 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({ role }) => {
         </ScrollView>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 120 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: 120 + insets.bottom }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+      >
         {isLoading ? (
           <View className="items-center justify-center py-12">
             <ActivityIndicator size="large" color="#008080" />
@@ -102,8 +115,10 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({ role }) => {
             <View className="h-24 w-24 rounded-full bg-slate-100 items-center justify-center mb-6">
               <Icon name="chat-bubble" className="text-slate-300 text-5xl" />
             </View>
-            <Text className="text-xl font-extrabold text-slate-900 mb-2">No Messages Yet</Text>
-            <Text className="text-sm text-slate-400 text-center">
+            <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-xl text-slate-900 mb-2">
+              No Messages Yet
+            </Text>
+            <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-sm text-slate-400 text-center">
               {role === 'organizer'
                 ? 'Start a conversation with workers who apply to your events'
                 : 'Apply to gigs to start messaging with organizers'}
@@ -136,14 +151,14 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({ role }) => {
                 </View>
                 <View className="flex-1">
                   <View className="flex-row items-center justify-between mb-1">
-                    <Text className="text-lg font-extrabold text-slate-900" numberOfLines={1}>
+                    <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-lg text-slate-900" numberOfLines={1}>
                       {chat.title || chat.participants.map(p => p.name).join(', ') || 'Conversation'}
                     </Text>
-                    <Text className="text-[10px] font-bold uppercase tracking-widest text-slate-300">
+                    <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[10px] uppercase tracking-widest text-slate-300">
                       {formatTime(chat.last_message_at)}
                     </Text>
                   </View>
-                  <Text className="text-sm font-semibold text-slate-400" numberOfLines={1}>
+                  <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-sm text-slate-400" numberOfLines={1}>
                     {chat.last_message || 'No messages yet'}
                   </Text>
                 </View>
@@ -153,7 +168,10 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({ role }) => {
         )}
       </ScrollView>
 
-      <Pressable className="absolute bottom-8 right-6 h-16 w-16 items-center justify-center rounded-3xl bg-primary">
+      <Pressable
+        className="absolute right-6 h-16 w-16 items-center justify-center rounded-3xl bg-primary"
+        style={{ bottom: insets.bottom + 88 }}
+      >
         <Icon name="add" className="text-white text-3xl font-bold" />
       </Pressable>
     </KeyboardAvoidingView>

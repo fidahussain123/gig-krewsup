@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../lib/api';
 import Icon from '../components/Icon';
 
@@ -49,6 +50,7 @@ interface Event {
 const EventDetailsScreen: React.FC = () => {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const insets = useSafeAreaInsets();
   const [event, setEvent] = useState<Event | null>(null);
   const [applicants, setApplicants] = useState<Applicant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -161,7 +163,8 @@ const EventDetailsScreen: React.FC = () => {
         </View>
         <Pressable
           onPress={() => router.back()}
-          className="absolute top-4 left-4 h-10 w-10 rounded-full bg-white/20 items-center justify-center"
+          className="absolute h-10 w-10 rounded-full bg-white/20 items-center justify-center"
+          style={{ top: insets.top + 8, left: 16 }}
         >
           <Icon name="arrow_back_ios_new" className="text-white text-xl" />
         </Pressable>
@@ -196,7 +199,7 @@ const EventDetailsScreen: React.FC = () => {
         </View>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 24 }}>
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}>
         {activeTab === 'details' ? (
           <View className="p-4 space-y-4">
             <View className="bg-white rounded-2xl p-4 shadow-sm">

@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../lib/api';
 import Icon from '../components/Icon';
@@ -24,6 +25,7 @@ interface DashboardStats {
 
 const OrganizerDashboard: React.FC = () => {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [events, setEvents] = useState<Event[]>([]);
   const [stats, setStats] = useState<DashboardStats>({ pendingToPay: 0, activeGigs: 0, applicants: 0 });
@@ -69,9 +71,9 @@ const OrganizerDashboard: React.FC = () => {
 
   return (
     <View className="flex-1 bg-slate-50">
-      <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 24 + insets.bottom + 90 }}>
         <FadeInView delay={0} duration={500}>
-          <View className="flex-row items-center justify-between bg-white p-6">
+          <View className="flex-row items-center justify-between bg-white px-6 pb-6" style={{ paddingTop: insets.top + 12 }}>
             <View className="flex-row items-center gap-3">
               <View className="h-12 w-12 rounded-full border-2 border-primary/20 bg-gray-200 overflow-hidden">
                 {user?.avatarUrl ? (
@@ -83,8 +85,12 @@ const OrganizerDashboard: React.FC = () => {
                 )}
               </View>
               <View>
-                <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[10px] uppercase tracking-widest text-slate-400">Welcome back</Text>
-                <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-xl text-slate-900">{user?.name || 'Organizer'}</Text>
+                <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[10px] uppercase tracking-widest text-slate-400">
+                  Welcome back
+                </Text>
+                <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-xl text-slate-900">
+                  {user?.name || 'Organizer'}
+                </Text>
               </View>
             </View>
             <ScalePress className="h-11 w-11 items-center justify-center rounded-full bg-white ring-1 ring-slate-100">

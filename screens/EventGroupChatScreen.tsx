@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../lib/api';
 import socketClient from '../lib/socket';
 import { useAuth } from '../contexts/AuthContext';
@@ -26,6 +27,7 @@ const EventGroupChatScreen: React.FC = () => {
   const params = useLocalSearchParams<{ conversationId?: string; id?: string }>();
   const conversationId = (params.conversationId || params.id) as string | undefined;
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { user, token, role } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -214,7 +216,7 @@ const EventGroupChatScreen: React.FC = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
-      <View className="bg-white border-b border-slate-100 px-4 py-3 flex-row items-center gap-3">
+      <View className="bg-white border-b border-slate-100 px-4 pb-3 flex-row items-center gap-3" style={{ paddingTop: insets.top + 10 }}>
         <Pressable onPress={() => router.back()} className="h-10 w-10 rounded-full bg-slate-100 items-center justify-center">
           <Icon name="arrow_back_ios_new" className="text-slate-600" />
         </Pressable>
@@ -230,7 +232,12 @@ const EventGroupChatScreen: React.FC = () => {
         </Pressable>
       </View>
 
-      <ScrollView className="flex-1 px-4 py-4" contentContainerStyle={{ paddingBottom: 16 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
+      <ScrollView
+        className="flex-1 px-4 py-4"
+        contentContainerStyle={{ paddingBottom: 16 + insets.bottom }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+      >
         {isLoading ? (
           <View className="items-center justify-center h-32">
             <ActivityIndicator size="large" color="#008080" />

@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import { uploadFile, UploadAsset } from '../lib/storage';
 import Icon from '../components/Icon';
 
 const WorkerOnboardingScreen: React.FC = () => {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { completeOnboarding } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -149,14 +151,18 @@ const WorkerOnboardingScreen: React.FC = () => {
 
   return (
     <KeyboardAvoidingView className="flex-1 bg-slate-50" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View className="px-6 pt-10 pb-6 bg-white border-b border-slate-100">
+      <View className="px-6 pb-6 bg-white border-b border-slate-100" style={{ paddingTop: insets.top + 12 }}>
         <View className="flex-row items-center gap-4 mb-6">
           <View className="h-14 w-14 rounded-2xl bg-accent/20 items-center justify-center">
             <Icon name="emoji-people" className="text-yellow-700 text-3xl" />
           </View>
           <View>
-            <Text className="text-xl font-extrabold text-slate-900 tracking-tight">Your Details</Text>
-            <Text className="text-sm font-bold text-slate-400 mt-1">Let's set up your worker profile</Text>
+            <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-xl text-slate-900 tracking-tight">
+              Your Details
+            </Text>
+            <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-sm text-slate-400 mt-1">
+              Let's set up your worker profile
+            </Text>
           </View>
         </View>
         <View className="flex-row gap-1">
@@ -166,7 +172,12 @@ const WorkerOnboardingScreen: React.FC = () => {
         </View>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 48 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ padding: 24, paddingBottom: 48 + insets.bottom }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+      >
         {error && (
           <View className="mb-4 p-4 bg-red-50 rounded-xl">
             <Text className="text-red-600 text-sm font-medium">{error}</Text>

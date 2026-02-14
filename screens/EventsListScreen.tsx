@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../lib/api';
 import Icon from '../components/Icon';
 
@@ -28,6 +29,7 @@ interface Event {
 
 const EventsListScreen: React.FC = () => {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'draft' | 'published'>('all');
@@ -68,8 +70,10 @@ const EventsListScreen: React.FC = () => {
 
   return (
     <View className="flex-1 bg-slate-50">
-      <View className="bg-white px-6 py-4 flex-row items-center border-b border-slate-100">
-        <Text className="text-lg font-extrabold text-slate-900 flex-1 tracking-tight">My Events</Text>
+      <View className="bg-white px-6 pb-4 flex-row items-center border-b border-slate-100" style={{ paddingTop: insets.top + 10 }}>
+        <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-lg text-slate-900 flex-1 tracking-tight">
+          My Events
+        </Text>
         <Pressable
           onPress={() => router.push('/organizer/create-event')}
           className="h-10 w-10 rounded-full bg-primary items-center justify-center"
@@ -84,7 +88,7 @@ const EventsListScreen: React.FC = () => {
           {(['all', 'draft', 'published'] as const).map((f) => (
             <Pressable
               key={f}
-              onClick={() => setFilter(f)}
+              onPress={() => setFilter(f)}
               className={`px-4 py-2 rounded-full ${
                 filter === f 
                   ? 'bg-primary text-white' 
@@ -97,7 +101,7 @@ const EventsListScreen: React.FC = () => {
         </View>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 24 }}>
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 24 + insets.bottom + 90 }}>
         {isLoading ? (
           <View className="items-center justify-center h-48">
             <ActivityIndicator size="large" color="#008080" />

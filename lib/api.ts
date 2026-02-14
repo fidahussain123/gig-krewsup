@@ -172,6 +172,15 @@ class ApiClient {
     return this.request<{ events: any[] }>('/events/browse/all');
   }
 
+  async getNearbyEvents(lat: number, lng: number, radiusKm = 25) {
+    const params = new URLSearchParams({
+      lat: String(lat),
+      lng: String(lng),
+      radiusKm: String(radiusKm),
+    });
+    return this.request<{ events: any[] }>(`/events/nearby?${params.toString()}`);
+  }
+
   async applyToEvent(eventId: string, coverLetter?: string) {
     return this.request(`/events/${eventId}/apply`, {
       method: 'POST',
