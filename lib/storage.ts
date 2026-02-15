@@ -1,14 +1,9 @@
 // File Upload via Backend Proxy
 // This module handles file uploads through our backend, which proxies to Appwrite
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
 import * as FileSystem from 'expo-file-system';
 import { Platform } from 'react-native';
-
-const API_BASE_URL =
-  Constants.expoConfig?.extra?.apiUrl ||
-  process.env.EXPO_PUBLIC_API_URL ||
-  'http://localhost:3001/api';
+import { API_BASE_URL } from './config';
 
 export interface UploadResult {
   success: boolean;
@@ -71,8 +66,9 @@ export async function uploadFile(file: UploadAsset): Promise<UploadResult> {
 
 // Simple function to convert file to base64 for preview (optional)
 export async function fileToBase64(uri: string): Promise<string> {
+  // Some versions of expo-file-system do not have EncodingType as a property; use the string directly.
   const base64 = await FileSystem.readAsStringAsync(uri, {
-    encoding: FileSystem.EncodingType.Base64,
+    encoding: 'base64',
   });
   return `data:application/octet-stream;base64,${base64}`;
 }

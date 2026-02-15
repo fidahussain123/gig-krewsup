@@ -216,7 +216,7 @@ const EventGroupChatScreen: React.FC = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
-      <View className="bg-white border-b border-slate-100 px-4 pb-3 flex-row items-center gap-3" style={{ paddingTop: insets.top + 10 }}>
+      <View className="bg-white border-b border-slate-100 px-4 pb-3 flex-row items-center gap-3" style={{ paddingTop: insets.top + 20 }}>
         <Pressable onPress={() => router.back()} className="h-10 w-10 rounded-full bg-slate-100 items-center justify-center">
           <Icon name="arrow_back_ios_new" className="text-slate-600" />
         </Pressable>
@@ -234,7 +234,7 @@ const EventGroupChatScreen: React.FC = () => {
 
       <ScrollView
         className="flex-1 px-4 py-4"
-        contentContainerStyle={{ paddingBottom: 16 + insets.bottom }}
+        contentContainerStyle={{ paddingTop: 8, paddingBottom: 24 + insets.bottom }}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
       >

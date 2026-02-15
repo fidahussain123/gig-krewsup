@@ -49,7 +49,7 @@ const GigDetailsScreen: React.FC = () => {
 
   return (
     <View className="flex-1 bg-white">
-      <View className="px-6 pb-4 flex-row items-center justify-between border-b border-slate-100" style={{ paddingTop: insets.top + 10 }}>
+      <View className="px-6 pb-4 flex-row items-center justify-between border-b border-slate-100" style={{ paddingTop: insets.top + 20 }}>
         <Pressable onPress={() => router.back()} className="h-12 w-12 items-center justify-center rounded-full">
           <Icon name="arrow_back_ios_new" className="text-slate-700 text-xl" />
         </Pressable>
@@ -66,7 +66,7 @@ const GigDetailsScreen: React.FC = () => {
         </View>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 120 + insets.bottom + 90 }}>
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingTop: 8, paddingBottom: 128 + insets.bottom + 90 }}>
         {isLoading ? (
           <View className="items-center justify-center py-12">
             <ActivityIndicator size="large" color="#008080" />

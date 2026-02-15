@@ -1,11 +1,8 @@
 // Socket.IO Client for Real-Time Messaging
 import { io, Socket } from 'socket.io-client';
-import Constants from 'expo-constants';
+import { SOCKET_BASE_URL } from './config';
 
-const SOCKET_URL =
-  Constants.expoConfig?.extra?.socketUrl ||
-  process.env.EXPO_PUBLIC_SOCKET_URL ||
-  'http://localhost:3001';
+const SOCKET_URL = SOCKET_BASE_URL;
 
 class SocketClient {
   private socket: Socket | null = null;

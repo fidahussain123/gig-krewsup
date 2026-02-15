@@ -50,9 +50,9 @@ const WorkerLayout: React.FC = () => {
           backgroundColor: '#ffffff',
           borderTopColor: '#e2e8f0',
           borderTopWidth: 1,
-          paddingTop: 8,
-          paddingBottom: Math.max(insets.bottom, 10),
-          height: 62 + Math.max(insets.bottom, 10),
+          paddingTop: 12,
+          paddingBottom: Math.max(insets.bottom, 16),
+          height: 66 + Math.max(insets.bottom, 16),
         },
       }}
     >

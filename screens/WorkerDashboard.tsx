@@ -159,7 +159,7 @@ const WorkerDashboard: React.FC = () => {
     <KeyboardAvoidingView className="flex-1 bg-slate-50" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <FadeInView delay={0} duration={500}>
         <View className="bg-white border-b border-slate-100">
-          <View className="flex-row items-center justify-between px-6 pb-3" style={{ paddingTop: insets.top + 12 }}>
+          <View className="flex-row items-center justify-between px-6 pb-3" style={{ paddingTop: insets.top + 20 }}>
             <View className="flex-row items-center gap-4">
               <View className="h-12 w-12 rounded-full bg-primary/10 items-center justify-center">
                 <Icon name="person" className="text-primary text-3xl" />
@@ -211,7 +211,7 @@ const WorkerDashboard: React.FC = () => {
 
       <ScrollView
         className="flex-1 px-6 py-6"
-        contentContainerStyle={{ paddingBottom: 40 + insets.bottom + 90 }}
+        contentContainerStyle={{ paddingTop: 8, paddingBottom: 48 + insets.bottom + 90 }}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
       >

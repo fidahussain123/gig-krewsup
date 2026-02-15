@@ -63,7 +63,7 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({ role }) => {
 
   return (
     <KeyboardAvoidingView className="flex-1 bg-white relative" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View className="px-6 pb-4" style={{ paddingTop: insets.top + 14 }}>
+      <View className="px-6 pb-4" style={{ paddingTop: insets.top + 20 }}>
         <View className="flex-row items-center justify-between mb-6">
           <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-3xl tracking-tight text-slate-900">
             Messages
@@ -102,7 +102,7 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({ role }) => {
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingBottom: 120 + insets.bottom }}
+        contentContainerStyle={{ paddingTop: 8, paddingBottom: 128 + insets.bottom }}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
       >

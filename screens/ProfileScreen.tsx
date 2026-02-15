@@ -124,7 +124,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ role }) => {
 
   return (
     <KeyboardAvoidingView className="flex-1 bg-slate-50" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View className="px-6 pb-6 bg-white border-b border-slate-100" style={{ paddingTop: insets.top + 14 }}>
+      <View className="px-6 pb-6 bg-white border-b border-slate-100" style={{ paddingTop: insets.top + 20 }}>
         <View className="flex-row items-center justify-between mb-6">
           <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-2xl text-slate-900">
             Profile
@@ -196,7 +196,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ role }) => {
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ padding: 24, paddingBottom: 48 + insets.bottom + 80 }}
+        contentContainerStyle={{ padding: 24, paddingTop: 16, paddingBottom: 56 + insets.bottom + 80 }}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
       >

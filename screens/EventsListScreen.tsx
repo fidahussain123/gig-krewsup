@@ -70,7 +70,7 @@ const EventsListScreen: React.FC = () => {
 
   return (
     <View className="flex-1 bg-slate-50">
-      <View className="bg-white px-6 pb-4 flex-row items-center border-b border-slate-100" style={{ paddingTop: insets.top + 10 }}>
+      <View className="bg-white px-6 pb-4 flex-row items-center border-b border-slate-100" style={{ paddingTop: insets.top + 20 }}>
         <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-lg text-slate-900 flex-1 tracking-tight">
           My Events
         </Text>
@@ -101,7 +101,7 @@ const EventsListScreen: React.FC = () => {
         </View>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 24 + insets.bottom + 90 }}>
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingTop: 8, paddingBottom: 32 + insets.bottom + 90 }}>
         {isLoading ? (
           <View className="items-center justify-center h-48">
             <ActivityIndicator size="large" color="#008080" />

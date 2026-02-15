@@ -199,7 +199,7 @@ const EventDetailsScreen: React.FC = () => {
         </View>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}>
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingTop: 12, paddingBottom: 32 + insets.bottom }}>
         {activeTab === 'details' ? (
           <View className="p-4 space-y-4">
             <View className="bg-white rounded-2xl p-4 shadow-sm">

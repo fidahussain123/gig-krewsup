@@ -151,7 +151,7 @@ const WorkerOnboardingScreen: React.FC = () => {
 
   return (
     <KeyboardAvoidingView className="flex-1 bg-slate-50" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View className="px-6 pb-6 bg-white border-b border-slate-100" style={{ paddingTop: insets.top + 12 }}>
+      <View className="px-6 pb-6 bg-white border-b border-slate-100" style={{ paddingTop: insets.top + 20 }}>
         <View className="flex-row items-center gap-4 mb-6">
           <View className="h-14 w-14 rounded-2xl bg-accent/20 items-center justify-center">
             <Icon name="emoji-people" className="text-yellow-700 text-3xl" />
@@ -174,7 +174,7 @@ const WorkerOnboardingScreen: React.FC = () => {
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ padding: 24, paddingBottom: 48 + insets.bottom }}
+        contentContainerStyle={{ padding: 24, paddingTop: 16, paddingBottom: 56 + insets.bottom }}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
       >

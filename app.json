@@ -33,8 +33,7 @@
       }
     },
     "plugins": [
-      "@react-native-community/datetimepicker",
-      "react-native-reanimated/plugin"
+      "@react-native-community/datetimepicker"
     ]
   }
 }

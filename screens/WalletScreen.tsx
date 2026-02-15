@@ -45,7 +45,7 @@ const WalletScreen: React.FC<WalletScreenProps> = ({ role }) => {
 
   return (
     <View className="flex-1 bg-slate-50">
-      <View className="bg-white px-6 pb-6 flex-row items-center justify-between border-b border-slate-100" style={{ paddingTop: insets.top + 12 }}>
+      <View className="bg-white px-6 pb-6 flex-row items-center justify-between border-b border-slate-100" style={{ paddingTop: insets.top + 20 }}>
         <Pressable onPress={() => router.back()} className="h-12 w-12 items-center justify-center rounded-full">
           <Icon name="arrow_back_ios_new" className="text-2xl text-slate-700" />
         </Pressable>
@@ -59,7 +59,7 @@ const WalletScreen: React.FC<WalletScreenProps> = ({ role }) => {
 
       <ScrollView
         className="flex-1 px-6 py-8"
-        contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}
+        contentContainerStyle={{ paddingTop: 12, paddingBottom: 32 + insets.bottom }}
         refreshControl={
           <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="#008080" />
         }

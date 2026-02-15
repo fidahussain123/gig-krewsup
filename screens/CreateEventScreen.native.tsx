@@ -249,7 +249,7 @@ const CreateEventScreen: React.FC = () => {
 
   return (
     <KeyboardAvoidingView className="flex-1 bg-slate-50" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View className="bg-white px-6 pb-4 flex-row items-center border-b border-slate-100" style={{ paddingTop: insets.top + 10 }}>
+      <View className="bg-white px-6 pb-4 flex-row items-center border-b border-slate-100" style={{ paddingTop: insets.top + 20 }}>
         <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full">
           <Icon name="arrow_back_ios_new" className="text-slate-700" />
         </Pressable>
@@ -258,7 +258,7 @@ const CreateEventScreen: React.FC = () => {
         </Text>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 + insets.bottom + 90 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingTop: 16, paddingBottom: 48 + insets.bottom + 90 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
         {error && (
           <View className="mx-4 mt-4 p-4 bg-red-50 rounded-xl">
             <Text className="text-red-600 text-sm font-medium">{error}</Text>

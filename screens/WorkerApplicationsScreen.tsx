@@ -45,7 +45,7 @@ const WorkerApplicationsScreen: React.FC = () => {
 
   return (
     <View className="flex-1 bg-slate-50">
-      <View className="bg-white px-6 pb-4 flex-row items-center border-b border-slate-100" style={{ paddingTop: insets.top + 10 }}>
+      <View className="bg-white px-6 pb-4 flex-row items-center border-b border-slate-100" style={{ paddingTop: insets.top + 20 }}>
         <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full">
           <Icon name="arrow_back_ios_new" className="text-slate-700" />
         </Pressable>
@@ -54,7 +54,7 @@ const WorkerApplicationsScreen: React.FC = () => {
         </Text>
       </View>
 
-      <ScrollView className="flex-1 px-6 py-6" contentContainerStyle={{ paddingBottom: 24 + insets.bottom + 90 }}>
+      <ScrollView className="flex-1 px-6 py-6" contentContainerStyle={{ paddingTop: 8, paddingBottom: 32 + insets.bottom + 90 }}>
         {isLoading ? (
           <View className="items-center justify-center py-12">
             <ActivityIndicator size="large" color="#008080" />

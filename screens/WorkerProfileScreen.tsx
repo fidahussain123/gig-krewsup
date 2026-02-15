@@ -49,7 +49,7 @@ const WorkerProfileScreen: React.FC = () => {
 
   return (
     <View className="flex-1 bg-slate-50">
-      <View className="bg-white px-6 pb-4 flex-row items-center border-b border-slate-100" style={{ paddingTop: insets.top + 10 }}>
+      <View className="bg-white px-6 pb-4 flex-row items-center border-b border-slate-100" style={{ paddingTop: insets.top + 20 }}>
         <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full">
           <Icon name="arrow_back_ios_new" className="text-slate-700" />
         </Pressable>
@@ -58,7 +58,7 @@ const WorkerProfileScreen: React.FC = () => {
         </Text>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingBottom: 24 + insets.bottom + 90 }}>
+      <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingTop: 16, paddingBottom: 32 + insets.bottom + 90 }}>
         <View className="bg-white rounded-3xl p-6 shadow-sm ring-1 ring-slate-100">
           <View className="flex-row items-center gap-4">
             <View className="h-20 w-20 rounded-3xl bg-slate-100 overflow-hidden">

@@ -79,8 +79,8 @@ const LandingScreen: React.FC = () => {
       <ScrollView
         contentContainerStyle={{
           paddingHorizontal: horizontalPadding,
-          paddingTop: insets.top + 10,
-          paddingBottom: insets.bottom + 20,
+          paddingTop: insets.top + 24,
+          paddingBottom: insets.bottom + 32,
           flexGrow: 1,
         }}
         keyboardShouldPersistTaps="handled"

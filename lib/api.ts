@@ -1,10 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
-
-const API_BASE_URL =
-  Constants.expoConfig?.extra?.apiUrl ||
-  process.env.EXPO_PUBLIC_API_URL ||
-  'http://localhost:3001/api';
+import { API_BASE_URL } from './config';
 
 interface ApiResponse<T> {
   data?: T;

@@ -71,9 +71,9 @@ const OrganizerDashboard: React.FC = () => {
 
   return (
     <View className="flex-1 bg-slate-50">
-      <ScrollView contentContainerStyle={{ paddingBottom: 24 + insets.bottom + 90 }}>
+      <ScrollView contentContainerStyle={{ paddingTop: 8, paddingBottom: 32 + insets.bottom + 90 }}>
         <FadeInView delay={0} duration={500}>
-          <View className="flex-row items-center justify-between bg-white px-6 pb-6" style={{ paddingTop: insets.top + 12 }}>
+          <View className="flex-row items-center justify-between bg-white px-6 pb-6" style={{ paddingTop: insets.top + 20 }}>
             <View className="flex-row items-center gap-3">
               <View className="h-12 w-12 rounded-full border-2 border-primary/20 bg-gray-200 overflow-hidden">
                 {user?.avatarUrl ? (
