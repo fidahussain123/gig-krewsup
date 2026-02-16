@@ -4,7 +4,8 @@ require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 
 const apiUrl = (process.env.EXPO_PUBLIC_API_URL || 'https://gig-krewsup.onrender.com/api').trim();
 const socketUrl = (process.env.EXPO_PUBLIC_SOCKET_URL || 'https://gig-krewsup.onrender.com/').trim();
-console.log('[KrewsUp] Using Render API:', apiUrl);
+const isRender = apiUrl.includes('gig-krewsup.onrender.com');
+console.log('[KrewsUp] Using API:', apiUrl, isRender ? '(Render)' : '(custom .env)');
 
 module.exports = {
   expo: {

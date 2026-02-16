@@ -1,0 +1,267 @@
+{
+  "info": {
+    "name": "KrewsUp API",
+    "description": "API collection for KrewsUp. Set environment variable: baseUrl = http://localhost:3001/api (or your API base including /api). After login, set token in collection/auth and use {{token}} in Bearer auth.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3001/api" },
+    { "key": "token", "value": "" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"yourSecurePassword123\",\n  \"name\": \"Your Name\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/register",
+            "description": "Register new user. Copy token from response for Authorization."
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"yourSecurePassword123\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login",
+            "description": "Login. Copy token to collection variable 'token' for Bearer auth."
+          }
+        },
+        {
+          "name": "Get Me",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/auth/me",
+            "description": "Get current user and profile. Requires Bearer token."
+          }
+        },
+        {
+          "name": "Set Role",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"organizer\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/set-role",
+            "description": "Set role: organizer or worker. Use new token from response."
+          }
+        },
+        {
+          "name": "Onboarding",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Full Name\",\n  \"phone\": \"+1234567890\",\n  \"city\": \"Bangalore\",\n  \"country\": \"India\",\n  \"companyName\": \"My Co\",\n  \"organizerType\": \"corporate\",\n  \"skills\": \"Event setup\",\n  \"bio\": \"Worker bio\",\n  \"hourlyRate\": 500,\n  \"age\": 28,\n  \"experienceYears\": 3,\n  \"gender\": \"male\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/onboarding",
+            "description": "Complete onboarding. All fields optional."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        { "name": "Get Profile", "request": { "method": "GET", "url": "{{baseUrl}}/users/profile" } },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"New Name\",\n  \"phone\": \"+1234567890\",\n  \"city\": \"Bangalore\",\n  \"country\": \"India\",\n  \"avatarUrl\": \"https://...\"\n}" },
+            "url": "{{baseUrl}}/users/profile"
+          }
+        },
+        {
+          "name": "Update Organizer Profile",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"companyName\": \"Company Ltd\",\n  \"organizerType\": \"corporate\"\n}" },
+            "url": "{{baseUrl}}/users/organizer-profile"
+          }
+        },
+        {
+          "name": "Update Worker Profile",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"skills\": \"Event setup\",\n  \"bio\": \"Bio\",\n  \"hourlyRate\": 400,\n  \"experienceYears\": 2,\n  \"age\": 25,\n  \"gender\": \"male\",\n  \"workerPhotoUrls\": []\n}" },
+            "url": "{{baseUrl}}/users/worker-profile"
+          }
+        },
+        {
+          "name": "Device Token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"token\": \"fcm-device-token\",\n  \"platform\": \"android\"\n}" },
+            "url": "{{baseUrl}}/users/device-token"
+          }
+        },
+        { "name": "Get Worker (organizer)", "request": { "method": "GET", "url": "{{baseUrl}}/users/worker/:workerId" } },
+        { "name": "Wallet Summary", "request": { "method": "GET", "url": "{{baseUrl}}/users/wallet-summary" } }
+      ]
+    },
+    {
+      "name": "Events",
+      "item": [
+        { "name": "List My Events (organizer)", "request": { "method": "GET", "url": "{{baseUrl}}/events" } },
+        { "name": "My Event Applications (worker)", "request": { "method": "GET", "url": "{{baseUrl}}/events/my/applications" } },
+        { "name": "My Event Applications Details (worker)", "request": { "method": "GET", "url": "{{baseUrl}}/events/my/applications/details" } },
+        { "name": "Get Event", "request": { "method": "GET", "url": "{{baseUrl}}/events/:eventId" } },
+        {
+          "name": "Create Event (organizer)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Summer Fest 2025\",\n  \"description\": \"Annual event\",\n  \"location\": \"Bangalore\",\n  \"venue\": \"Main Hall\",\n  \"eventDate\": \"2025-06-15\",\n  \"endDate\": \"2025-06-16\",\n  \"startTime\": \"09:00\",\n  \"endTime\": \"18:00\",\n  \"jobType\": \"event\",\n  \"maleCount\": 5,\n  \"femaleCount\": 5,\n  \"malePay\": 500,\n  \"femalePay\": 500,\n  \"paymentMethod\": \"later\",\n  \"subtotal\": 5000,\n  \"commission\": 500,\n  \"total\": 5500,\n  \"latitude\": 12.9716,\n  \"longitude\": 77.5946\n}"
+            },
+            "url": "{{baseUrl}}/events"
+          }
+        },
+        {
+          "name": "Update Event (organizer)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Updated Title\",\n  \"status\": \"published\"\n}" },
+            "url": "{{baseUrl}}/events/:eventId"
+          }
+        },
+        { "name": "Delete Event (organizer)", "request": { "method": "DELETE", "url": "{{baseUrl}}/events/:eventId" } },
+        { "name": "Create Event Conversation (organizer)", "request": { "method": "POST", "url": "{{baseUrl}}/events/:eventId/conversation" } },
+        { "name": "Browse All Events", "request": { "method": "GET", "url": "{{baseUrl}}/events/browse/all" } },
+        { "name": "Nearby Events (worker)", "request": { "method": "GET", "url": "{{baseUrl}}/events/nearby?lat=12.9716&lng=77.5946&radiusKm=25" } },
+        {
+          "name": "Apply to Event (worker)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"coverLetter\": \"I am interested.\"\n}" },
+            "url": "{{baseUrl}}/events/:eventId/apply"
+          }
+        },
+        { "name": "Get Event Applicants (organizer)", "request": { "method": "GET", "url": "{{baseUrl}}/events/:eventId/applicants" } },
+        { "name": "Get Event Conversation", "request": { "method": "GET", "url": "{{baseUrl}}/events/:eventId/conversation" } }
+      ]
+    },
+    {
+      "name": "Gigs",
+      "item": [
+        { "name": "Get Gigs by Event", "request": { "method": "GET", "url": "{{baseUrl}}/gigs/event/:eventId" } },
+        { "name": "Get Gig", "request": { "method": "GET", "url": "{{baseUrl}}/gigs/:gigId" } },
+        {
+          "name": "Create Gig (organizer)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": \"event-uuid\",\n  \"title\": \"Setup Crew\",\n  \"description\": \"Help with setup\",\n  \"requirements\": \"Punctual\",\n  \"payRate\": 400,\n  \"payType\": \"hourly\",\n  \"positionsNeeded\": 3,\n  \"startTime\": \"09:00\",\n  \"endTime\": \"18:00\"\n}"
+            },
+            "url": "{{baseUrl}}/gigs"
+          }
+        },
+        {
+          "name": "Apply to Gig (worker)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"coverLetter\": \"I'd like to apply.\"\n}" },
+            "url": "{{baseUrl}}/gigs/:gigId/apply"
+          }
+        },
+        { "name": "Get Gig Applications (organizer)", "request": { "method": "GET", "url": "{{baseUrl}}/gigs/:gigId/applications" } },
+        {
+          "name": "Update Gig Application Status (organizer)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"accepted\"\n}" },
+            "url": "{{baseUrl}}/gigs/applications/:applicationId"
+          }
+        },
+        { "name": "My Gig Applications (worker)", "request": { "method": "GET", "url": "{{baseUrl}}/gigs/my/applications" } },
+        { "name": "Browse All Gigs", "request": { "method": "GET", "url": "{{baseUrl}}/gigs/browse/all" } }
+      ]
+    },
+    {
+      "name": "Applications",
+      "item": [
+        {
+          "name": "Update Application Status (event)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"accepted\"\n}" },
+            "url": "{{baseUrl}}/applications/:applicationId"
+          }
+        },
+        { "name": "Get Application", "request": { "method": "GET", "url": "{{baseUrl}}/applications/:applicationId" } }
+      ]
+    },
+    {
+      "name": "Messages",
+      "item": [
+        { "name": "Get Conversations", "request": { "method": "GET", "url": "{{baseUrl}}/messages/conversations" } },
+        { "name": "Get Messages", "request": { "method": "GET", "url": "{{baseUrl}}/messages/conversations/:conversationId" } },
+        { "name": "Get Conversation Info", "request": { "method": "GET", "url": "{{baseUrl}}/messages/conversations/:conversationId/info" } },
+        {
+          "name": "Send Message",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"content\": \"Hello!\",\n  \"messageType\": \"text\"\n}" },
+            "url": "{{baseUrl}}/messages/conversations/:conversationId/messages"
+          }
+        },
+        {
+          "name": "Start Conversation",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"participantId\": \"user-uuid\",\n  \"title\": \"Chat\",\n  \"initialMessage\": \"Hi\"\n}" },
+            "url": "{{baseUrl}}/messages/conversations"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Uploads",
+      "item": [
+        {
+          "name": "Upload File",
+          "request": {
+            "method": "POST",
+            "body": { "mode": "formdata", "formdata": [{ "key": "file", "type": "file", "src": "" }] },
+            "url": "{{baseUrl}}/uploads/upload",
+            "description": "Body: form-data, key = file, type = File. Max 20MB."
+          }
+        },
+        { "name": "Get File URL", "request": { "method": "GET", "url": "{{baseUrl}}/uploads/file/:fileId", "auth": { "type": "noauth" } } }
+      ]
+    }
+  ]
+}

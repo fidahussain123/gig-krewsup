@@ -30,6 +30,11 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Root API (so GET /api returns something)
+app.get('/api', (req, res) => {
+  res.json({ message: 'KrewsUp API', version: '1.0', docs: '/api/health for health check' });
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
@@ -70,9 +75,10 @@ async function start() {
   const server = createServer(app);
   initWebSocket(server);
   
-  server.listen(PORT, () => {
-    console.log(`\n✨ Server running at http://localhost:${PORT}`);
-    console.log(`📡 API endpoints available at http://localhost:${PORT}/api`);
+  const HOST = process.env.HOST || '0.0.0.0';
+  server.listen({ port: PORT, host: HOST }, () => {
+    console.log(`\n✨ Server running at http://${HOST}:${PORT}`);
+    console.log(`📡 API endpoints available at http://${HOST}:${PORT}/api`);
     console.log(`🔌 WebSocket server ready`);
     console.log('\nAvailable routes:');
     console.log('  POST   /api/auth/register');

@@ -1,6 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from './config';
 
+export function getApiBaseUrl() {
+  return API_BASE_URL;
+}
+
 interface ApiResponse<T> {
   data?: T;
   error?: string;
@@ -50,22 +54,39 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
+    const url = `${API_BASE_URL}${endpoint}`;
     try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      const response = await fetch(url, {
         ...options,
         headers,
       });
 
-      const data = await response.json();
+      let data: any;
+      try {
+        data = await response.json();
+      } catch {
+        return {
+          error: `Server at ${API_BASE_URL} returned invalid response (not JSON). Is the API running?`,
+        };
+      }
 
       if (!response.ok) {
-        return { error: data.error || 'Request failed' };
+        return { error: data?.error || `Request failed (${response.status})` };
       }
 
       return { data };
     } catch (error: any) {
-      console.error('API request failed:', error);
-      return { error: error.message || 'Network error' };
+      const msg = error?.message || '';
+      const isNetwork =
+        msg.includes('fetch') ||
+        msg.includes('network') ||
+        msg.includes('Failed to fetch') ||
+        msg.includes('Network request failed');
+      const shown = isNetwork
+        ? `Cannot connect to ${API_BASE_URL}. Check server, URL in .env, and network.`
+        : msg || 'Request failed';
+      console.error('API request failed:', url, error);
+      return { error: shown };
     }
   }
 
