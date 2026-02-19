@@ -1,18 +1,9 @@
 /**
- * App config: all API and socket URLs point to Render production.
- * Override via .env (EXPO_PUBLIC_API_URL, EXPO_PUBLIC_SOCKET_URL) if needed.
+ * API and socket URLs. Set to EC2 so app/APK always uses this server.
+ * To change server: edit EC2_API and EC2_SOCKET below.
  */
-import Constants from 'expo-constants';
+const EC2_API = 'http://51.21.245.127:3001/api';
+const EC2_SOCKET = 'http://51.21.245.127:3001/';
 
-const RENDER_API = 'https://gig-krewsup.onrender.com/api';
-const RENDER_SOCKET = 'https://gig-krewsup.onrender.com/';
-
-export const API_BASE_URL =
-  Constants.expoConfig?.extra?.apiUrl ??
-  (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL) ??
-  RENDER_API;
-
-export const SOCKET_BASE_URL =
-  Constants.expoConfig?.extra?.socketUrl ??
-  (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_SOCKET_URL) ??
-  RENDER_SOCKET;
+export const API_BASE_URL = EC2_API;
+export const SOCKET_BASE_URL = EC2_SOCKET;

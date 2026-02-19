@@ -1,11 +1,11 @@
 {
   "info": {
     "name": "KrewsUp API",
-    "description": "API collection for KrewsUp. Set environment variable: baseUrl = http://localhost:3001/api (or your API base including /api). After login, set token in collection/auth and use {{token}} in Bearer auth.",
+    "description": "API collection for KrewsUp. Set environment variable: baseUrl = http://51.21.245.127:3001/api (or your API base). After login, set token in collection/auth and use {{token}} in Bearer auth.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:3001/api" },
+    { "key": "baseUrl", "value": "http://51.21.245.127:3001/api" },
     { "key": "token", "value": "" }
   ],
   "auth": {

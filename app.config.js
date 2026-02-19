@@ -2,10 +2,11 @@
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 
-const apiUrl = (process.env.EXPO_PUBLIC_API_URL || 'https://gig-krewsup.onrender.com/api').trim();
-const socketUrl = (process.env.EXPO_PUBLIC_SOCKET_URL || 'https://gig-krewsup.onrender.com/').trim();
-const isRender = apiUrl.includes('gig-krewsup.onrender.com');
-console.log('[KrewsUp] Using API:', apiUrl, isRender ? '(Render)' : '(custom .env)');
+const DEFAULT_API = 'http://51.21.245.127:3001/api';
+const DEFAULT_SOCKET = 'http://51.21.245.127:3001/';
+const apiUrl = (process.env.EXPO_PUBLIC_API_URL || DEFAULT_API).trim();
+const socketUrl = (process.env.EXPO_PUBLIC_SOCKET_URL || DEFAULT_SOCKET).trim();
+console.log('[KrewsUp] Using API:', apiUrl);
 
 module.exports = {
   expo: {
@@ -26,6 +27,8 @@ module.exports = {
       permissions: ['RECORD_AUDIO'],
       package: 'com.fidasp.krewsup',
       softwareKeyboardLayoutMode: 'pan',
+      // Allow HTTP (cleartext) so app can reach http://51.21.245.127:3001
+      usesCleartextTraffic: true,
     },
     web: {
       bundler: 'metro',
