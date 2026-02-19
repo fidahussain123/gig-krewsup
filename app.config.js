@@ -29,6 +29,10 @@ module.exports = {
       softwareKeyboardLayoutMode: 'pan',
       // Allow HTTP (cleartext) so app can reach http://51.21.245.127:3001
       usesCleartextTraffic: true,
+      // Explicitly allow cleartext for EC2 IP
+      networkSecurityConfig: {
+        cleartextTrafficPermitted: true,
+      },
     },
     web: {
       bundler: 'metro',

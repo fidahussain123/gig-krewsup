@@ -20,7 +20,8 @@
         "RECORD_AUDIO"
       ],
       "package": "com.fidasp.krewsup",
-      "softwareKeyboardLayoutMode": "pan"
+      "softwareKeyboardLayoutMode": "pan",
+      "usesCleartextTraffic": true
     },
     "web": {
       "bundler": "metro"
