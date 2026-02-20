@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../lib/api';
 import Icon from '../components/Icon';
@@ -20,7 +20,6 @@ interface Applicant {
   age?: number;
   gender?: string;
   verification_status?: string;
-  gender: string;
   status: 'pending' | 'accepted' | 'rejected';
   applied_at: string;
 }
@@ -58,6 +57,7 @@ const EventDetailsScreen: React.FC = () => {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [isCreatingChat, setIsCreatingChat] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     loadEventDetails();
@@ -118,6 +118,35 @@ const EventDetailsScreen: React.FC = () => {
   const acceptedApplicants = applicants.filter(a => a.status === 'accepted');
   const rejectedApplicants = applicants.filter(a => a.status === 'rejected');
 
+  const handleDeleteEvent = () => {
+    const hasAccepted = acceptedApplicants.length > 0;
+    const title = 'Delete event?';
+    const message = hasAccepted
+      ? `This event has ${acceptedApplicants.length} accepted worker(s). If you confirm, they will get a push notification and an in-app alert. Are you sure you want to delete "${event?.title}"?`
+      : `Are you sure you want to delete "${event?.title}"? This cannot be undone.`;
+    Alert.alert(title, message, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          if (!id) return;
+          setIsDeleting(true);
+          try {
+            const result = await api.deleteEvent(id);
+            if (result.error) {
+              Alert.alert('Could not delete', result.error);
+              return;
+            }
+            router.replace('/organizer/events');
+          } finally {
+            setIsDeleting(false);
+          }
+        },
+      },
+    ]);
+  };
+
   const handleCreateOrOpenChat = async () => {
     if (!id) return;
     if (conversationId) {
@@ -149,36 +178,48 @@ const EventDetailsScreen: React.FC = () => {
     );
   }
 
+  const topPad = Math.max(insets.top, 12);
+  const sidePad = 20;
+  const bottomPad = Math.max(insets.bottom, 24);
+
   return (
     <View className="flex-1 bg-slate-50">
-      <View className="relative">
-        <View className="h-48 bg-primary">
+      <View className="relative" style={{ paddingTop: topPad, paddingHorizontal: sidePad, paddingBottom: 8 }}>
+        <View className="rounded-2xl overflow-hidden h-40 bg-primary">
           {event.image_url ? (
             <Image source={{ uri: event.image_url }} className="w-full h-full" resizeMode="cover" />
           ) : (
             <View className="w-full h-full items-center justify-center">
-              <Icon name="event" className="text-white/30 text-6xl" />
+              <Icon name="event" className="text-white/30 text-5xl" />
             </View>
           )}
         </View>
         <Pressable
           onPress={() => router.back()}
-          className="absolute h-10 w-10 rounded-full bg-white/20 items-center justify-center"
-          style={{ top: insets.top + 8, left: 16 }}
+          className="absolute h-10 w-10 rounded-full bg-black/30 items-center justify-center"
+          style={{ top: topPad + 8, left: sidePad + 8 }}
         >
-          <Icon name="arrow_back_ios_new" className="text-white text-xl" />
+          <Icon name="arrow_back_ios_new" className="text-white text-lg" />
         </Pressable>
-        <View className="absolute bottom-4 left-4 right-4">
-          <Text className="text-xl font-extrabold text-white">{event.title}</Text>
+        <Pressable
+          onPress={handleDeleteEvent}
+          disabled={isDeleting}
+          className="absolute h-10 w-10 rounded-full bg-black/30 items-center justify-center"
+          style={{ top: topPad + 8, right: sidePad + 8 }}
+        >
+          <Icon name="delete_outline" className="text-white text-lg" />
+        </Pressable>
+        <View className="absolute bottom-3 left-4 right-4">
+          <Text className="text-lg font-extrabold text-white" numberOfLines={2}>{event.title}</Text>
           {event.job_type && (
-            <View className="mt-2 px-3 py-1 rounded-full bg-white/20">
+            <View className="mt-1.5 px-2.5 py-0.5 rounded-full bg-white/25 self-start">
               <Text className="text-white text-xs font-bold">{event.job_type}</Text>
             </View>
           )}
         </View>
       </View>
 
-      <View className="bg-white border-b border-slate-100 p-3">
+      <View className="bg-white border-b border-slate-100 px-4 py-3 mt-1" style={{ paddingHorizontal: sidePad }}>
         <View className="flex-row rounded-xl bg-slate-100 p-1">
           <Pressable
             onPress={() => setActiveTab('applicants')}
@@ -199,11 +240,15 @@ const EventDetailsScreen: React.FC = () => {
         </View>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingTop: 12, paddingBottom: 32 + insets.bottom }}>
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ paddingTop: 16, paddingBottom: 32 + bottomPad, paddingHorizontal: sidePad }}
+        showsVerticalScrollIndicator={false}
+      >
         {activeTab === 'details' ? (
-          <View className="p-4 space-y-4">
-            <View className="bg-white rounded-2xl p-4 shadow-sm">
-              <Text className="text-xs font-bold text-slate-400 uppercase mb-3">Group Chat</Text>
+          <View className="space-y-3">
+            <View className="bg-white rounded-xl p-3 shadow-sm">
+              <Text className="text-xs font-bold text-slate-400 uppercase mb-2">Group Chat</Text>
               <Pressable
                 onPress={handleCreateOrOpenChat}
                 disabled={isCreatingChat}
@@ -214,8 +259,8 @@ const EventDetailsScreen: React.FC = () => {
                 </Text>
               </Pressable>
             </View>
-            <View className="bg-white rounded-2xl p-4 shadow-sm">
-              <Text className="text-xs font-bold text-slate-400 uppercase mb-3">Date & Time</Text>
+            <View className="bg-white rounded-xl p-3 shadow-sm">
+              <Text className="text-xs font-bold text-slate-400 uppercase mb-2">Date & Time</Text>
               <View className="flex-row items-center gap-3 mb-2">
                 <Icon name="calendar_today" className="text-primary" />
                 <Text className="font-medium">{formatDate(event.event_date)}</Text>
@@ -226,8 +271,8 @@ const EventDetailsScreen: React.FC = () => {
               </View>
             </View>
 
-            <View className="bg-white rounded-2xl p-4 shadow-sm">
-              <Text className="text-xs font-bold text-slate-400 uppercase mb-3">Location</Text>
+            <View className="bg-white rounded-xl p-3 shadow-sm">
+              <Text className="text-xs font-bold text-slate-400 uppercase mb-2">Location</Text>
               <View className="flex-row items-start gap-3">
                 <Icon name="location_on" className="text-primary" />
                 <View>
@@ -239,8 +284,8 @@ const EventDetailsScreen: React.FC = () => {
               </View>
             </View>
 
-            <View className="bg-white rounded-2xl p-4 shadow-sm">
-              <Text className="text-xs font-bold text-slate-400 uppercase mb-3">Staffing Requirements</Text>
+            <View className="bg-white rounded-xl p-3 shadow-sm">
+              <Text className="text-xs font-bold text-slate-400 uppercase mb-2">Staffing Requirements</Text>
               <View className="flex-row gap-4">
                 <View className="flex-row items-center gap-3">
                   <View className="h-10 w-10 rounded-xl bg-blue-50 items-center justify-center">
@@ -263,8 +308,8 @@ const EventDetailsScreen: React.FC = () => {
               </View>
             </View>
 
-            <View className="bg-white rounded-2xl p-4 shadow-sm">
-              <Text className="text-xs font-bold text-slate-400 uppercase mb-3">Payment</Text>
+            <View className="bg-white rounded-xl p-3 shadow-sm">
+              <Text className="text-xs font-bold text-slate-400 uppercase mb-2">Payment</Text>
               <View className="space-y-2">
                 <View className="flex-row justify-between">
                   <Text className="text-slate-500">Subtotal</Text>
@@ -282,14 +327,27 @@ const EventDetailsScreen: React.FC = () => {
             </View>
 
             {event.description && (
-              <View className="bg-white rounded-2xl p-4 shadow-sm">
-                <Text className="text-xs font-bold text-slate-400 uppercase mb-3">Description</Text>
-                <Text className="text-slate-600">{event.description}</Text>
+              <View className="bg-white rounded-xl p-3 shadow-sm">
+                <Text className="text-xs font-bold text-slate-400 uppercase mb-2">Description</Text>
+                <Text className="text-slate-600 text-sm">{event.description}</Text>
               </View>
             )}
+
+            <View className="bg-white rounded-xl p-3 shadow-sm border border-red-100">
+              <Text className="text-xs font-bold text-slate-400 uppercase mb-2">Danger zone</Text>
+              <Pressable
+                onPress={handleDeleteEvent}
+                disabled={isDeleting}
+                className="h-12 rounded-xl border-2 border-red-300 bg-red-50 items-center justify-center"
+              >
+                <Text className="text-red-600 font-bold text-sm">
+                  {isDeleting ? 'Deleting…' : 'Delete event'}
+                </Text>
+              </Pressable>
+            </View>
           </View>
         ) : (
-          <View className="p-4 space-y-4">
+          <View className="space-y-3">
             {applicants.length === 0 ? (
               <View className="items-center py-12">
                 <View className="h-16 w-16 rounded-full bg-slate-100 items-center justify-center mb-4">

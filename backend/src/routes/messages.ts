@@ -57,7 +57,7 @@ router.get('/conversations/:id', authMiddleware, async (req: AuthRequest, res: R
     const messages = await db.execute({
       sql: `SELECT m.*, u.name as sender_name, u.avatar_url as sender_avatar
             FROM messages m
-            JOIN users u ON m.sender_id = u.id
+            LEFT JOIN users u ON m.sender_id = u.id
             WHERE m.conversation_id = ?
             ORDER BY m.created_at ASC`,
       args: [req.params.id],

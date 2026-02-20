@@ -37,6 +37,11 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ role }) => {
   });
 
   useEffect(() => {
+    if (user?.name) setFormData(prev => ({ ...prev, name: user.name }));
+    if (user?.avatarUrl) setPhotoPreview(user.avatarUrl);
+  }, [user?.name, user?.avatarUrl]);
+
+  useEffect(() => {
     loadProfile();
   }, []);
 
@@ -46,8 +51,8 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ role }) => {
       if (result.data) {
         setProfile(result.data);
         setPhotos(result.data.photos || []);
-        setFormData({
-          name: result.data.name || '',
+        setFormData(prev => ({
+          name: result.data.name || prev.name || user?.name || '',
           phone: result.data.phone || '',
           city: result.data.city || '',
           country: result.data.country || '',
@@ -56,10 +61,8 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ role }) => {
           age: result.data.profile?.age?.toString?.() || '',
           gender: result.data.profile?.gender || '',
           experienceYears: result.data.profile?.experience_years?.toString?.() || '',
-        });
-        if (result.data.avatarUrl) {
-          setPhotoPreview(result.data.avatarUrl);
-        }
+        }));
+        if (result.data.avatarUrl) setPhotoPreview(result.data.avatarUrl);
       }
     } catch (error) {
       console.error('Failed to load profile:', error);

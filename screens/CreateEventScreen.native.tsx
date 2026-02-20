@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'expo-router';
-import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { ActivityIndicator, Dimensions, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import MapView, { Marker } from 'react-native-maps';
@@ -9,11 +9,25 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../lib/api';
 import { uploadFile, UploadAsset } from '../lib/storage';
 import Icon from '../components/Icon';
+import { ScalePress } from '../components/AnimatedComponents';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CARD_PADDING = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05));
+const SECTION_GAP = 20;
 
 const CreateEventScreen: React.FC = () => {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
+  const rawInsets = useSafeAreaInsets();
+  const insets = {
+    top: rawInsets?.top ?? 0,
+    bottom: rawInsets?.bottom ?? 0,
+    left: rawInsets?.left ?? 0,
+    right: rawInsets?.right ?? 0,
+  };
   const [isLoading, setIsLoading] = useState(false);
+  // On Android, do not mount MapView to avoid native crash on open; use placeholder only
+  const useMapOnAndroid = false;
+  const [mapReady, setMapReady] = useState(Platform.OS !== 'android');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [eventImage, setEventImage] = useState<UploadAsset | null>(null);
@@ -84,6 +98,19 @@ const CreateEventScreen: React.FC = () => {
   };
   const formatTime = (value: Date) =>
     value.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (Platform.OS === 'android' && useMapOnAndroid) {
+        setMapReady(false);
+        const t = setTimeout(() => setMapReady(true), 800);
+        return () => {
+          clearTimeout(t);
+          setMapReady(false);
+        };
+      }
+    }, [])
+  );
 
   useEffect(() => {
     if (!locationQuery || locationQuery.trim().length < 3) {
@@ -235,228 +262,266 @@ const CreateEventScreen: React.FC = () => {
 
   if (success) {
     return (
-      <View className="flex-1 bg-white items-center justify-center">
+      <View className="flex-1 bg-slate-50 items-center justify-center px-8">
         <View className="items-center">
-          <View className="h-24 w-24 rounded-full bg-green-100 items-center justify-center mb-6">
-            <Icon name="check_circle" className="text-green-500 text-5xl" />
+          <View className="h-20 w-20 rounded-full bg-emerald-100 items-center justify-center mb-5">
+            <Icon name="check_circle" className="text-emerald-500 text-5xl" />
           </View>
-          <Text className="text-2xl font-extrabold text-slate-900 mb-2">Event Created!</Text>
-          <Text className="text-slate-400">₹{total.toFixed(2)} added to pending payments</Text>
+          <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-xl text-slate-900 mb-2 text-center">Event created</Text>
+          <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-500 text-sm text-center">₹{total.toFixed(2)} added to pending payments</Text>
         </View>
       </View>
     );
   }
 
   return (
-    <KeyboardAvoidingView className="flex-1 bg-slate-50" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View className="bg-white px-6 pb-4 flex-row items-center border-b border-slate-100" style={{ paddingTop: insets.top + 20 }}>
-        <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full">
-          <Icon name="arrow_back_ios_new" className="text-slate-700" />
-        </Pressable>
-        <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-lg text-slate-900 flex-1 text-center pr-10">
+    <KeyboardAvoidingView className="flex-1 bg-slate-100" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View className="bg-white flex-row items-center border-b border-slate-200/80" style={{ paddingTop: insets.top + 12, paddingBottom: 14, paddingHorizontal: CARD_PADDING }}>
+        <ScalePress onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100">
+          <Icon name="arrow_back_ios_new" className="text-slate-600 text-lg" />
+        </ScalePress>
+        <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-base text-slate-900 flex-1 text-center">
           Create Event
         </Text>
+        <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingTop: 16, paddingBottom: 48 + insets.bottom + 90 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ paddingTop: SECTION_GAP, paddingBottom: 48 + insets.bottom + 100, paddingHorizontal: CARD_PADDING }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        showsVerticalScrollIndicator={false}
+      >
         {error && (
-          <View className="mx-4 mt-4 p-4 bg-red-50 rounded-xl">
-            <Text className="text-red-600 text-sm font-medium">{error}</Text>
+          <View className="mb-4 p-4 bg-red-50 rounded-xl border border-red-100">
+            <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-red-600 text-sm">{error}</Text>
           </View>
         )}
 
-        <View className="p-4">
-          <Pressable onPress={handleImageSelect} className="relative w-full aspect-[16/9] rounded-2xl bg-slate-100 border-2 border-dashed border-slate-200 overflow-hidden">
-            {imagePreview ? (
-              <Image source={{ uri: imagePreview }} className="w-full h-full" resizeMode="cover" />
-            ) : (
-              <View className="flex-1 items-center justify-center">
-                <Icon name="add-photo-alternate" className="text-slate-300 text-4xl mb-2" />
-                <Text className="text-sm font-bold text-slate-400">Add Event Poster</Text>
+        {/* Event poster */}
+        <ScalePress onPress={handleImageSelect} className="mb-5">
+          <View className="rounded-2xl overflow-hidden bg-white border border-slate-200 shadow-sm" style={{ shadowOpacity: 0.06, elevation: 2 }}>
+            <View className="w-full aspect-[16/9] bg-slate-100">
+              {imagePreview ? (
+                <Image source={{ uri: imagePreview }} className="w-full h-full" resizeMode="cover" />
+              ) : (
+                <View className="flex-1 items-center justify-center p-6">
+                  <View className="h-14 w-14 rounded-full bg-primary/10 items-center justify-center mb-3">
+                    <Icon name="add-photo-alternate" className="text-primary text-3xl" />
+                  </View>
+                  <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-slate-600 text-sm">Add event poster</Text>
+                  <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-400 text-xs mt-1">Tap to upload image</Text>
+                </View>
+              )}
+            </View>
+            {imagePreview && (
+              <View className="absolute bottom-3 right-3 rounded-full bg-primary p-2.5">
+                <Icon name="edit" className="text-white text-base" />
               </View>
             )}
-            <View className="absolute bottom-3 right-3 bg-primary rounded-full p-2">
-              <Icon name="edit" className="text-white text-lg" />
-            </View>
-          </Pressable>
-        </View>
+          </View>
+        </ScalePress>
 
-        <View className="px-4 py-2 space-y-3">
-          <Text className="text-xs font-extrabold uppercase tracking-widest text-slate-400">Event basics</Text>
+        {/* Event basics card */}
+        <View className="bg-white rounded-2xl p-4 mb-5 border border-slate-200/80 shadow-sm" style={{ shadowOpacity: 0.04, elevation: 2 }}>
+          <View className="flex-row items-center gap-2 mb-4">
+            <Icon name="description" className="text-primary text-xl" />
+            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-slate-800 text-sm">Event basics</Text>
+          </View>
           <TextInput
             value={formData.title}
-            onChangeText={(value) => handleChange('title', value)}
-            className="w-full rounded-2xl border border-slate-100 bg-white h-14 px-5 text-base font-medium"
-            placeholder="Event Name *"
+            onChangeText={(v) => handleChange('title', v)}
+            placeholder="Event name *"
+            placeholderTextColor="#94a3b8"
+            className="rounded-xl border border-slate-200 bg-slate-50 h-12 px-4 text-slate-900 text-base mb-3"
+            style={{ fontFamily: 'Inter_500Medium' }}
           />
           <TextInput
             value={formData.description}
-            onChangeText={(value) => handleChange('description', value)}
-            className="w-full rounded-2xl border border-slate-100 bg-white min-h-[80px] p-4 text-base font-medium"
-            placeholder="Event Description"
+            onChangeText={(v) => handleChange('description', v)}
+            placeholder="Description (optional)"
+            placeholderTextColor="#94a3b8"
             multiline
+            className="rounded-xl border border-slate-200 bg-slate-50 min-h-[88px] p-4 text-slate-900 text-base"
+            style={{ fontFamily: 'Inter_500Medium', textAlignVertical: 'top' }}
           />
-          <Text className="text-xs font-extrabold uppercase tracking-widest text-slate-400 mt-2">Schedule</Text>
-          <View className="flex-row gap-3">
-            <Pressable
-              onPress={() => setShowStartDatePicker(true)}
-              className="flex-1 rounded-2xl border border-slate-100 bg-white h-14 px-4 justify-center"
-            >
-              <Text className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">
-                Start date
-              </Text>
-              <Text className="text-sm font-medium text-slate-800">
-                {startDateValue
-                  ? formatDateLabel(startDateValue)
-                  : 'Select start date'}
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setShowEndDatePicker(true)}
-              className="flex-1 rounded-2xl border border-slate-100 bg-white h-14 px-4 justify-center"
-            >
-              <Text className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-0.5">
-                End date
-              </Text>
-              <Text className="text-sm font-medium text-slate-800">
-                {endDateValue
-                  ? formatDateLabel(endDateValue)
-                  : 'Optional'}
-              </Text>
-            </Pressable>
+        </View>
+
+        {/* Schedule card — date & time side by side */}
+        <View className="bg-white rounded-2xl p-4 mb-5 border border-slate-200/80 shadow-sm" style={{ shadowOpacity: 0.04, elevation: 2 }}>
+          <View className="flex-row items-center gap-2 mb-4">
+            <Icon name="schedule" className="text-primary text-xl" />
+            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-slate-800 text-sm">Schedule</Text>
           </View>
-          <Pressable
-            onPress={() => setShowStartTimePicker(true)}
-            className="w-full rounded-2xl border border-slate-100 bg-white h-12 px-4 justify-center"
-          >
-            <Text className="text-sm font-medium text-slate-700">
-              {formData.startTime ? `Start Time: ${formData.startTime}` : 'Select Start Time'}
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={() => setShowEndTimePicker(true)}
-            className="w-full rounded-2xl border border-slate-100 bg-white h-12 px-4 justify-center"
-          >
-            <Text className="text-sm font-medium text-slate-700">
-              {formData.endTime ? `End Time: ${formData.endTime}` : 'Select End Time'}
-            </Text>
-          </Pressable>
-          {showStartDatePicker && (
-            <DateTimePicker
-              value={startDateValue || new Date()}
-              mode="date"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              minimumDate={new Date()}
-              onChange={(event, date) => {
-                if (Platform.OS !== 'ios') {
-                  setShowStartDatePicker(false);
+          {/* Date row */}
+          <View className="flex-row gap-3 mb-3">
+            <ScalePress onPress={() => setShowStartDatePicker(true)} className="flex-1 rounded-xl border border-slate-200 bg-slate-50 h-14 px-4 justify-center">
+              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-[10px] text-slate-400 uppercase tracking-wide">Start date</Text>
+              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-800 text-sm mt-0.5" numberOfLines={1}>
+                {startDateValue ? formatDateLabel(startDateValue) : 'Select'}
+              </Text>
+            </ScalePress>
+            <ScalePress onPress={() => setShowEndDatePicker(true)} className="flex-1 rounded-xl border border-slate-200 bg-slate-50 h-14 px-4 justify-center">
+              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-[10px] text-slate-400 uppercase tracking-wide">End date</Text>
+              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-800 text-sm mt-0.5" numberOfLines={1}>
+                {endDateValue ? formatDateLabel(endDateValue) : 'Optional'}
+              </Text>
+            </ScalePress>
+          </View>
+          {/* Time row — side by side */}
+          <View className="flex-row gap-3">
+            <ScalePress onPress={() => setShowStartTimePicker(true)} className="flex-1 rounded-xl border border-slate-200 bg-slate-50 h-14 px-4 justify-center">
+              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-[10px] text-slate-400 uppercase tracking-wide">Start time</Text>
+              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-800 text-sm mt-0.5">
+                {formData.startTime || 'Select'}
+              </Text>
+            </ScalePress>
+            <ScalePress onPress={() => setShowEndTimePicker(true)} className="flex-1 rounded-xl border border-slate-200 bg-slate-50 h-14 px-4 justify-center">
+              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-[10px] text-slate-400 uppercase tracking-wide">End time</Text>
+              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-800 text-sm mt-0.5">
+                {formData.endTime || 'Optional'}
+              </Text>
+            </ScalePress>
+          </View>
+        </View>
+
+        {showStartDatePicker && (
+          <DateTimePicker
+            value={startDateValue || new Date()}
+            mode="date"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            minimumDate={new Date()}
+            onChange={(event, date) => {
+              if (Platform.OS !== 'ios') setShowStartDatePicker(false);
+              if (date) {
+                setStartDateValue(date);
+                handleChange('startDate', formatDate(date));
+                if (endDateValue && endDateValue < date) {
+                  setEndDateValue(null);
+                  handleChange('endDate', '');
                 }
-                if (date) {
-                  setStartDateValue(date);
-                  handleChange('startDate', formatDate(date));
-                  // If end date is before start, reset it
-                  if (endDateValue && endDateValue < date) {
-                    setEndDateValue(null);
-                    handleChange('endDate', '');
-                  }
-                }
-              }}
-            />
-          )}
-          {showEndDatePicker && (
-            <DateTimePicker
-              value={endDateValue || startDateValue || new Date()}
-              mode="date"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              minimumDate={startDateValue || new Date()}
-              onChange={(event, date) => {
-                if (Platform.OS !== 'ios') {
-                  setShowEndDatePicker(false);
-                }
-                if (date) {
-                  setEndDateValue(date);
-                  handleChange('endDate', formatDate(date));
-                }
-              }}
-            />
-          )}
-          {showStartTimePicker && (
-            <DateTimePicker
-              value={startTimeValue || new Date()}
-              mode="time"
-              display={Platform.OS === 'ios' ? 'spinner' : 'clock'}
-              onChange={(event, date) => {
-                setShowStartTimePicker(false);
-                if (date) {
-                  setStartTimeValue(date);
-                  handleChange('startTime', formatTime(date));
-                }
-              }}
-            />
-          )}
-          {showEndTimePicker && (
-            <DateTimePicker
-              value={endTimeValue || startTimeValue || new Date()}
-              mode="time"
-              display={Platform.OS === 'ios' ? 'spinner' : 'clock'}
-              onChange={(event, date) => {
-                setShowEndTimePicker(false);
-                if (date) {
-                  setEndTimeValue(date);
-                  handleChange('endTime', formatTime(date));
-                }
-              }}
-            />
-          )}
-          <Text className="text-xs font-extrabold uppercase tracking-widest text-slate-400 mt-2">Location</Text>
-          <TextInput
-            value={locationQuery}
-            onChangeText={(value) => {
-              setLocationQuery(value);
-              if (!value) {
-                handleChange('location', '');
               }
             }}
-            className="w-full rounded-2xl border border-slate-100 bg-white h-14 px-5 text-base font-medium"
-            placeholder="Search location (city, area, landmark)"
+          />
+        )}
+        {showEndDatePicker && (
+          <DateTimePicker
+            value={endDateValue || startDateValue || new Date()}
+            mode="date"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            minimumDate={startDateValue || new Date()}
+            onChange={(event, date) => {
+              if (Platform.OS !== 'ios') setShowEndDatePicker(false);
+              if (date) {
+                setEndDateValue(date);
+                handleChange('endDate', formatDate(date));
+              }
+            }}
+          />
+        )}
+        {showStartTimePicker && (
+          <DateTimePicker
+            value={startTimeValue || new Date()}
+            mode="time"
+            display={Platform.OS === 'ios' ? 'spinner' : 'clock'}
+            onChange={(event, date) => {
+              setShowStartTimePicker(false);
+              if (date) {
+                setStartTimeValue(date);
+                handleChange('startTime', formatTime(date));
+              }
+            }}
+          />
+        )}
+        {showEndTimePicker && (
+          <DateTimePicker
+            value={endTimeValue || startTimeValue || new Date()}
+            mode="time"
+            display={Platform.OS === 'ios' ? 'spinner' : 'clock'}
+            onChange={(event, date) => {
+              setShowEndTimePicker(false);
+              if (date) {
+                setEndTimeValue(date);
+                handleChange('endTime', formatTime(date));
+              }
+            }}
+          />
+        )}
+
+        {/* Location card */}
+        <View className="bg-white rounded-2xl p-4 mb-5 border border-slate-200/80 shadow-sm" style={{ shadowOpacity: 0.04, elevation: 2 }}>
+          <View className="flex-row items-center gap-2 mb-4">
+            <Icon name="location-on" className="text-primary text-xl" />
+            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-slate-800 text-sm">Location</Text>
+          </View>
+          <TextInput
+            value={locationQuery}
+            onChangeText={(v) => {
+              setLocationQuery(v);
+              if (!v) handleChange('location', '');
+            }}
+            placeholder="Search city, area or landmark"
+            placeholderTextColor="#94a3b8"
+            className="rounded-xl border border-slate-200 bg-slate-50 h-12 px-4 text-slate-900 text-base mb-3"
+            style={{ fontFamily: 'Inter_500Medium' }}
           />
           {isSearchingLocation && (
-            <Text className="text-xs text-slate-400 px-1">Searching...</Text>
+            <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-400 text-xs mb-2">Searching...</Text>
           )}
           {locationResults.length > 0 && (
-            <View className="rounded-2xl border border-slate-100 bg-white overflow-hidden">
+            <View className="rounded-xl border border-slate-200 overflow-hidden mb-3">
               {locationResults.map((item) => (
-                <Pressable
-                  key={`${item.place_id}`}
-                  onPress={() => handleSelectLocation(item)}
-                  className="px-4 py-3 border-b border-slate-100"
-                >
-                  <Text className="text-sm font-medium text-slate-700">{item.display_name}</Text>
-                </Pressable>
+                <ScalePress key={`${item.place_id}`} onPress={() => handleSelectLocation(item)} className="px-4 py-3 border-b border-slate-100 bg-white">
+                  <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-700 text-sm" numberOfLines={2}>{item.display_name}</Text>
+                </ScalePress>
               ))}
             </View>
           )}
-          <View className="rounded-2xl border border-slate-100 overflow-hidden">
-            <MapView
-              style={{ height: 220, width: '100%' }}
-              region={mapRegion}
-              onRegionChangeComplete={setMapRegion}
-              onPress={(event) => handleMapPress(event.nativeEvent.coordinate)}
-            >
-              {selectedCoords && <Marker coordinate={selectedCoords} />}
-            </MapView>
+          <View className="rounded-xl overflow-hidden border border-slate-200" style={{ height: 200 }}>
+            {Platform.OS === 'android' && !useMapOnAndroid ? (
+              <View className="flex-1 bg-slate-100 items-center justify-center" style={{ height: 200 }}>
+                <Icon name="location_on" className="text-slate-400 text-3xl mb-2" />
+                <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-500 text-sm text-center px-4">
+                  Use search above to set location. Map not shown on this device.
+                </Text>
+              </View>
+            ) : mapReady ? (
+              <MapView
+                style={{ height: 200, width: '100%' }}
+                region={mapRegion}
+                onRegionChangeComplete={setMapRegion}
+                onPress={(e) => handleMapPress(e.nativeEvent.coordinate)}
+              >
+                {selectedCoords && <Marker coordinate={selectedCoords} />}
+              </MapView>
+            ) : (
+              <View className="flex-1 bg-slate-100 items-center justify-center" style={{ height: 200 }}>
+                <ActivityIndicator size="small" color="#008080" />
+              </View>
+            )}
           </View>
           <TextInput
             value={formData.venue}
-            onChangeText={(value) => handleChange('venue', value)}
-            className="w-full rounded-2xl border border-slate-100 bg-white h-14 px-5 text-base font-medium"
-            placeholder="Venue name / Full address"
+            onChangeText={(v) => handleChange('venue', v)}
+            placeholder="Venue name / full address"
+            placeholderTextColor="#94a3b8"
+            className="rounded-xl border border-slate-200 bg-slate-50 h-12 px-4 text-slate-900 text-base mt-3"
+            style={{ fontFamily: 'Inter_500Medium' }}
           />
-          <Text className="text-xs font-extrabold uppercase tracking-widest text-slate-400 mt-2">Job type</Text>
-          <View className="rounded-2xl border border-slate-100 bg-white overflow-hidden">
+        </View>
+
+        {/* Job type card */}
+        <View className="bg-white rounded-2xl p-4 mb-5 border border-slate-200/80 shadow-sm" style={{ shadowOpacity: 0.04, elevation: 2 }}>
+          <View className="flex-row items-center gap-2 mb-3">
+            <Icon name="work" className="text-primary text-xl" />
+            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-slate-800 text-sm">Job type</Text>
+          </View>
+          <View className="rounded-xl border border-slate-200 bg-slate-50 overflow-hidden">
             <Picker
               selectedValue={formData.jobType}
-              onValueChange={(value) => handleChange('jobType', String(value))}
+              onValueChange={(v) => handleChange('jobType', String(v))}
+              style={{ height: 48 }}
             >
               <Picker.Item label="Select job type" value="" />
               {jobTypes.map((type) => (
@@ -467,95 +532,107 @@ const CreateEventScreen: React.FC = () => {
           {formData.jobType === 'Other' && (
             <TextInput
               value={formData.jobTypeOther}
-              onChangeText={(value) => handleChange('jobTypeOther', value)}
-              className="w-full rounded-2xl border border-slate-100 bg-white h-12 px-4 text-sm font-medium"
-              placeholder="Enter job type"
+              onChangeText={(v) => handleChange('jobTypeOther', v)}
+              placeholder="Specify job type"
+              placeholderTextColor="#94a3b8"
+              className="rounded-xl border border-slate-200 bg-slate-50 h-12 px-4 text-slate-900 text-sm mt-3"
+              style={{ fontFamily: 'Inter_500Medium' }}
             />
           )}
-          <Text className="text-xs font-extrabold uppercase tracking-widest text-slate-400 mt-2">Worker requirements</Text>
-          <View className="bg-white rounded-2xl border border-slate-100 p-4 space-y-3">
-            <Text className="text-sm font-extrabold text-slate-900">Male gig workers</Text>
-            <View className="flex-row gap-3">
-              <View className="flex-1">
-                <Text className="text-[11px] font-bold text-slate-400 mb-2">Number of male</Text>
-                <TextInput
-                  value={String(formData.maleCount)}
-                  onChangeText={(value) => handleChange('maleCount', Number(value || 0))}
-                  className="w-full rounded-2xl border border-slate-100 bg-slate-50 h-12 px-4 text-sm font-medium"
-                  placeholder="0"
-                  keyboardType="numeric"
-                />
-              </View>
-              <View className="flex-1">
-                <Text className="text-[11px] font-bold text-slate-400 mb-2">Pay per male</Text>
-                <TextInput
-                  value={String(formData.malePay)}
-                  onChangeText={(value) => handleChange('malePay', Number(value || 0))}
-                  className="w-full rounded-2xl border border-slate-100 bg-slate-50 h-12 px-4 text-sm font-medium"
-                  placeholder="₹0"
-                  keyboardType="numeric"
-                />
-              </View>
+        </View>
+
+        {/* Worker requirements card */}
+        <View className="bg-white rounded-2xl p-4 mb-5 border border-slate-200/80 shadow-sm" style={{ shadowOpacity: 0.04, elevation: 2 }}>
+          <View className="flex-row items-center gap-2 mb-4">
+            <Icon name="groups" className="text-primary text-xl" />
+            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-slate-800 text-sm">Worker requirements</Text>
+          </View>
+          <View className="flex-row gap-3 mb-4">
+            <View className="flex-1">
+              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-500 text-xs mb-1.5">Male — count</Text>
+              <TextInput
+                value={String(formData.maleCount)}
+                onChangeText={(v) => handleChange('maleCount', Number(v) || 0)}
+                placeholder="0"
+                placeholderTextColor="#94a3b8"
+                keyboardType="numeric"
+                className="rounded-xl border border-slate-200 bg-slate-50 h-12 px-4 text-slate-900"
+                style={{ fontFamily: 'Inter_600SemiBold' }}
+              />
             </View>
-            <Text className="text-sm font-extrabold text-slate-900 mt-2">Female gig workers</Text>
-            <View className="flex-row gap-3">
-              <View className="flex-1">
-                <Text className="text-[11px] font-bold text-slate-400 mb-2">Number of female</Text>
-                <TextInput
-                  value={String(formData.femaleCount)}
-                  onChangeText={(value) => handleChange('femaleCount', Number(value || 0))}
-                  className="w-full rounded-2xl border border-slate-100 bg-slate-50 h-12 px-4 text-sm font-medium"
-                  placeholder="0"
-                  keyboardType="numeric"
-                />
-              </View>
-              <View className="flex-1">
-                <Text className="text-[11px] font-bold text-slate-400 mb-2">Pay per female</Text>
-                <TextInput
-                  value={String(formData.femalePay)}
-                  onChangeText={(value) => handleChange('femalePay', Number(value || 0))}
-                  className="w-full rounded-2xl border border-slate-100 bg-slate-50 h-12 px-4 text-sm font-medium"
-                  placeholder="₹0"
-                  keyboardType="numeric"
-                />
-              </View>
+            <View className="flex-1">
+              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-500 text-xs mb-1.5">Male — pay (₹)</Text>
+              <TextInput
+                value={String(formData.malePay)}
+                onChangeText={(v) => handleChange('malePay', Number(v) || 0)}
+                placeholder="0"
+                placeholderTextColor="#94a3b8"
+                keyboardType="numeric"
+                className="rounded-xl border border-slate-200 bg-slate-50 h-12 px-4 text-slate-900"
+                style={{ fontFamily: 'Inter_600SemiBold' }}
+              />
+            </View>
+          </View>
+          <View className="flex-row gap-3">
+            <View className="flex-1">
+              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-500 text-xs mb-1.5">Female — count</Text>
+              <TextInput
+                value={String(formData.femaleCount)}
+                onChangeText={(v) => handleChange('femaleCount', Number(v) || 0)}
+                placeholder="0"
+                placeholderTextColor="#94a3b8"
+                keyboardType="numeric"
+                className="rounded-xl border border-slate-200 bg-slate-50 h-12 px-4 text-slate-900"
+                style={{ fontFamily: 'Inter_600SemiBold' }}
+              />
+            </View>
+            <View className="flex-1">
+              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-500 text-xs mb-1.5">Female — pay (₹)</Text>
+              <TextInput
+                value={String(formData.femalePay)}
+                onChangeText={(v) => handleChange('femalePay', Number(v) || 0)}
+                placeholder="0"
+                placeholderTextColor="#94a3b8"
+                keyboardType="numeric"
+                className="rounded-xl border border-slate-200 bg-slate-50 h-12 px-4 text-slate-900"
+                style={{ fontFamily: 'Inter_600SemiBold' }}
+              />
             </View>
           </View>
         </View>
 
-        <View className="px-4 py-4 space-y-2">
-          <View className="flex-row justify-between">
-            <Text className="text-slate-500 font-medium">Subtotal</Text>
-            <Text className="font-bold text-slate-700">₹{subtotal.toFixed(2)}</Text>
+        {/* Total summary card */}
+        <View className="bg-white rounded-2xl p-4 mb-5 border border-slate-200/80 shadow-sm" style={{ shadowOpacity: 0.04, elevation: 2 }}>
+          <View className="flex-row justify-between mb-2">
+            <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-500 text-sm">Subtotal</Text>
+            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-slate-800">₹{subtotal.toFixed(2)}</Text>
           </View>
-          <View className="flex-row justify-between">
-            <Text className="text-slate-500 font-medium">Platform Fee (13%)</Text>
-            <Text className="font-bold text-slate-700">₹{commission.toFixed(2)}</Text>
+          <View className="flex-row justify-between mb-2">
+            <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-500 text-sm">Platform fee (13%)</Text>
+            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-slate-800">₹{commission.toFixed(2)}</Text>
           </View>
-          <View className="flex-row justify-between border-t border-slate-100 pt-2">
-            <Text className="text-lg font-extrabold text-slate-900">Total</Text>
-            <Text className="text-xl font-extrabold text-primary">₹{total.toFixed(2)}</Text>
+          <View className="flex-row justify-between pt-3 border-t border-slate-200">
+            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-slate-900 text-base">Total</Text>
+            <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-primary text-xl">₹{total.toFixed(2)}</Text>
           </View>
         </View>
 
-        <View className="px-4 pb-6">
-          <Pressable
-            onPress={handleSubmit}
-            disabled={!isFormValid || isLoading}
-            className={`w-full py-4 rounded-2xl items-center justify-center ${
-              isFormValid && !isLoading ? 'bg-primary' : 'bg-slate-100'
-            }`}
-          >
-            {isLoading ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <View className="flex-row items-center gap-2">
-                <Text className={`${isFormValid ? 'text-white' : 'text-slate-400'} text-lg font-extrabold`}>Create Event</Text>
-                {isFormValid && <Icon name="event" className="text-white" />}
-              </View>
-            )}
-          </Pressable>
-        </View>
+        {/* Submit */}
+        <ScalePress
+          onPress={handleSubmit}
+          disabled={!isFormValid || isLoading}
+          className={`w-full py-4 rounded-2xl items-center justify-center ${isFormValid && !isLoading ? 'bg-primary' : 'bg-slate-200'}`}
+          style={isFormValid && !isLoading ? { shadowColor: '#008080', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 8, elevation: 4 } : undefined}
+        >
+          {isLoading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <View className="flex-row items-center gap-2">
+              <Text style={{ fontFamily: 'Inter_700Bold' }} className={isFormValid ? 'text-white text-base' : 'text-slate-500 text-base'}>Create event</Text>
+              {isFormValid && <Icon name="check_circle" className="text-white text-xl" />}
+            </View>
+          )}
+        </ScalePress>
       </ScrollView>
     </KeyboardAvoidingView>
   );

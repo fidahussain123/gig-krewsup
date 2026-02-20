@@ -57,11 +57,15 @@ router.get('/my/applications/details', authMiddleware, roleMiddleware('worker'),
   }
 });
 
-// Get single event
+// Get single event (with organizer/company for worker detail)
 router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const result = await db.execute({
-      sql: 'SELECT * FROM events WHERE id = ?',
+      sql: `SELECT e.*, u.name as organizer_name, u.avatar_url as organizer_avatar, op.company_name, op.organizer_type
+            FROM events e
+            JOIN users u ON e.organizer_id = u.id
+            LEFT JOIN organizer_profiles op ON u.id = op.user_id
+            WHERE e.id = ?`,
       args: [req.params.id],
     });
 
@@ -70,15 +74,24 @@ router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    const event = result.rows[0];
+    const row = result.rows[0] as any;
+    const { organizer_name, organizer_avatar, company_name, organizer_type, ...event } = row;
 
-    // Get gigs for this event
     const gigsResult = await db.execute({
       sql: 'SELECT * FROM gigs WHERE event_id = ?',
       args: [req.params.id],
     });
 
-    res.json({ event, gigs: gigsResult.rows });
+    res.json({
+      event,
+      organizer: {
+        name: organizer_name,
+        avatar_url: organizer_avatar,
+        company_name: company_name || null,
+        organizer_type: organizer_type || null,
+      },
+      gigs: gigsResult.rows,
+    });
   } catch (error: any) {
     console.error('Get event error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -200,20 +213,88 @@ router.put('/:id', authMiddleware, roleMiddleware('organizer'), async (req: Auth
   }
 });
 
-// Delete event
+const FCM_SERVER_KEY = process.env.FCM_SERVER_KEY || '';
+
+async function sendFcmNotification(tokens: string[], title: string, body: string, data: Record<string, string>) {
+  if (!FCM_SERVER_KEY || tokens.length === 0) return;
+  try {
+    await fetch('https://fcm.googleapis.com/fcm/send', {
+      method: 'POST',
+      headers: {
+        Authorization: `key=${FCM_SERVER_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        registration_ids: tokens,
+        notification: { title, body },
+        data,
+        priority: 'high',
+      }),
+    });
+  } catch (e) {
+    console.error('FCM send error:', e);
+  }
+}
+
+// Delete event (notifies accepted workers via push, then deletes)
 router.delete('/:id', authMiddleware, roleMiddleware('organizer'), async (req: AuthRequest, res: Response) => {
   try {
-    const result = await db.execute({
-      sql: 'DELETE FROM events WHERE id = ? AND organizer_id = ?',
-      args: [req.params.id, req.user!.id],
+    const eventId = req.params.id;
+
+    const eventResult = await db.execute({
+      sql: 'SELECT id, title FROM events WHERE id = ? AND organizer_id = ?',
+      args: [eventId, req.user!.id],
     });
 
-    if (result.rowsAffected === 0) {
+    if (eventResult.rows.length === 0) {
       res.status(404).json({ error: 'Event not found or not authorized' });
       return;
     }
 
-    res.json({ message: 'Event deleted' });
+    const eventTitle = (eventResult.rows[0] as any).title || 'Event';
+
+    const acceptedResult = await db.execute({
+      sql: `SELECT DISTINCT user_id FROM applications WHERE event_id = ? AND status = 'accepted'`,
+      args: [eventId],
+    });
+
+    const acceptedUserIds = (acceptedResult.rows as any[]).map((r) => r.user_id).filter(Boolean);
+
+    if (acceptedUserIds.length > 0) {
+      const placeholders = acceptedUserIds.map(() => '?').join(',');
+      const tokenResult = await db.execute({
+        sql: `SELECT token FROM device_tokens WHERE user_id IN (${placeholders})`,
+        args: acceptedUserIds,
+      });
+      const tokens = (tokenResult.rows as any[]).map((r) => r.token).filter(Boolean);
+
+      const title = 'Event cancelled';
+      const body = `"${eventTitle}" has been cancelled by the organizer. We're sorry for the inconvenience — your accepted slot is no longer valid. Please open the app to find other gigs.`;
+
+      await sendFcmNotification(tokens, title, body, {
+        type: 'event_cancelled',
+        eventId,
+        eventTitle,
+        message: body,
+      });
+    }
+
+    await db.execute({
+      sql: 'DELETE FROM applications WHERE event_id = ?',
+      args: [eventId],
+    });
+
+    const deleteResult = await db.execute({
+      sql: 'DELETE FROM events WHERE id = ? AND organizer_id = ?',
+      args: [eventId, req.user!.id],
+    });
+
+    if (deleteResult.rowsAffected === 0) {
+      res.status(404).json({ error: 'Event not found or not authorized' });
+      return;
+    }
+
+    res.json({ message: 'Event deleted', notifiedCount: acceptedUserIds.length });
   } catch (error: any) {
     console.error('Delete event error:', error);
     res.status(500).json({ error: 'Internal server error' });

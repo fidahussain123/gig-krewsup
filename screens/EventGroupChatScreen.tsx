@@ -37,6 +37,7 @@ const EventGroupChatScreen: React.FC = () => {
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const [isCallModalOpen, setIsCallModalOpen] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     if (!conversationId) return;
@@ -52,19 +53,26 @@ const EventGroupChatScreen: React.FC = () => {
     // Load messages and participants
     loadConversationData();
 
-    // Listen for new messages
+    // Listen for new messages (replace optimistic or append)
     const unsubMessage = socketClient.onMessage((message) => {
-      if (message.conversationId === conversationId) {
-        setMessages(prev => [...prev, {
-          id: message.id,
-          senderId: message.senderId,
-          senderName: message.senderName,
-          senderAvatar: message.senderAvatar,
-          content: message.content,
-          createdAt: message.createdAt,
-          messageType: 'text'
-        }]);
-      }
+      if (message.conversationId !== conversationId) return;
+      const newMsg = {
+        id: message.id,
+        senderId: message.senderId,
+        senderName: message.senderName,
+        senderAvatar: message.senderAvatar,
+        content: message.content,
+        createdAt: message.createdAt,
+        messageType: (message.messageType as Message['messageType']) || 'text',
+      };
+      setMessages((prev) => {
+        const isOwnEcho = message.senderId === user?.id;
+        if (isOwnEcho && prev.length > 0 && prev[prev.length - 1].id.startsWith('temp-')) {
+          return [...prev.slice(0, -1), newMsg];
+        }
+        if (prev.some((m) => m.id === message.id)) return prev;
+        return [...prev, newMsg];
+      });
     });
 
     // Listen for member joined
@@ -103,12 +111,12 @@ const EventGroupChatScreen: React.FC = () => {
       if (msgResult.data?.messages) {
         setMessages(msgResult.data.messages.map((m: any) => ({
           id: m.id,
-          senderId: m.sender_id,
-          senderName: m.sender_name || 'Unknown',
+          senderId: m.sender_id ?? '',
+          senderName: m.sender_name || 'System',
           senderAvatar: m.sender_avatar,
           content: m.content,
           createdAt: m.created_at,
-          messageType: m.message_type
+          messageType: (m.message_type as Message['messageType']) || 'text',
         })));
       }
 
@@ -128,16 +136,31 @@ const EventGroupChatScreen: React.FC = () => {
   };
 
   const handleSendMessage = () => {
-    if (!newMessage.trim() || !conversationId) return;
+    const text = newMessage.trim();
+    if (!text || !conversationId || !user?.id) return;
 
-    socketClient.sendMessage(conversationId, newMessage.trim());
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMessage: Message = {
+      id: tempId,
+      senderId: user.id,
+      senderName: user.name || 'You',
+      senderAvatar: undefined,
+      content: text,
+      createdAt: new Date().toISOString(),
+      messageType: 'text',
+    };
+    setMessages((prev) => [...prev, optimisticMessage]);
     setNewMessage('');
 
-    // Clear typing indicator
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
     socketClient.setTyping(conversationId, false);
+
+    if (!socketClient.isConnected() && token) {
+      socketClient.connect(token);
+    }
+    socketClient.sendMessage(conversationId, text);
   };
 
   const handleInputChange = (value: string) => {
@@ -198,6 +221,13 @@ const EventGroupChatScreen: React.FC = () => {
     return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
   };
 
+  useEffect(() => {
+    if (messages.length > 0) {
+      const t = setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+      return () => clearTimeout(t);
+    }
+  }, [messages.length]);
+
   // Group messages by date
   const groupedMessages: { date: string; messages: Message[] }[] = [];
   messages.forEach((msg) => {
@@ -233,10 +263,12 @@ const EventGroupChatScreen: React.FC = () => {
       </View>
 
       <ScrollView
-        className="flex-1 px-4 py-4"
-        contentContainerStyle={{ paddingTop: 8, paddingBottom: 24 + insets.bottom }}
+        ref={scrollRef}
+        className="flex-1 px-3 py-3"
+        contentContainerStyle={{ paddingTop: 6, paddingBottom: 20 + insets.bottom }}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
+        onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })}
       >
         {isLoading ? (
           <View className="items-center justify-center h-32">

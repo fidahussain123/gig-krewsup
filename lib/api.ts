@@ -174,13 +174,23 @@ class ApiClient {
   }
 
   async getEvent(id: string) {
-    return this.request<{ event: any; gigs: any[] }>(`/events/${id}`);
+    return this.request<{
+      event: any;
+      organizer?: { name: string; avatar_url?: string; company_name?: string; organizer_type?: string };
+      gigs: any[];
+    }>(`/events/${id}`);
   }
 
   async createEvent(data: any) {
     return this.request<{ eventId: string }>('/events', {
       method: 'POST',
       body: JSON.stringify(data),
+    });
+  }
+
+  async deleteEvent(eventId: string) {
+    return this.request<{ message: string; notifiedCount?: number }>(`/events/${eventId}`, {
+      method: 'DELETE',
     });
   }
 

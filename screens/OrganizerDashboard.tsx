@@ -1,7 +1,6 @@
-
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Image, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../lib/api';
@@ -30,6 +29,7 @@ const OrganizerDashboard: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [stats, setStats] = useState<DashboardStats>({ pendingToPay: 0, activeGigs: 0, applicants: 0 });
   const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadDashboardData();
@@ -60,6 +60,12 @@ const OrganizerDashboard: React.FC = () => {
     setIsLoading(false);
   };
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadDashboardData();
+    setRefreshing(false);
+  };
+
   const formatDate = (dateString: string) => {
     if (!dateString) return { month: 'TBD', day: '' };
     const date = new Date(dateString);
@@ -71,11 +77,25 @@ const OrganizerDashboard: React.FC = () => {
 
   return (
     <View className="flex-1 bg-slate-50">
-      <ScrollView contentContainerStyle={{ paddingTop: 8, paddingBottom: 32 + insets.bottom + 90 }}>
-        <FadeInView delay={0} duration={500}>
-          <View className="flex-row items-center justify-between bg-white px-6 pb-6" style={{ paddingTop: insets.top + 20 }}>
+      <ScrollView
+        contentContainerStyle={{
+          paddingTop: 12,
+          paddingBottom: 32 + insets.bottom + 90,
+          paddingHorizontal: 20,
+        }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#008080" />
+        }
+      >
+        {/* Header */}
+        <FadeInView delay={0} duration={400}>
+          <View
+            className="flex-row items-center justify-between bg-white px-5 pb-5 border-b border-slate-100"
+            style={{ paddingTop: insets.top + 16 }}
+          >
             <View className="flex-row items-center gap-3">
-              <View className="h-12 w-12 rounded-full border-2 border-primary/20 bg-gray-200 overflow-hidden">
+              <View className="h-12 w-12 rounded-full border-2 border-primary/30 bg-slate-100 overflow-hidden">
                 {user?.avatarUrl ? (
                   <Image source={{ uri: user.avatarUrl }} className="w-full h-full" resizeMode="cover" />
                 ) : (
@@ -85,118 +105,154 @@ const OrganizerDashboard: React.FC = () => {
                 )}
               </View>
               <View>
-                <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[10px] uppercase tracking-widest text-slate-400">
-                  Welcome back
-                </Text>
-                <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-xl text-slate-900">
+                <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-lg text-slate-900">
                   {user?.name || 'Organizer'}
                 </Text>
               </View>
             </View>
-            <ScalePress className="h-11 w-11 items-center justify-center rounded-full bg-white ring-1 ring-slate-100">
-              <Icon name="notifications" className="text-slate-700 text-2xl" />
+            <ScalePress
+              onPress={() => {}}
+              className="h-10 w-10 items-center justify-center rounded-full bg-slate-50"
+            >
+              <Icon name="notifications" className="text-slate-600 text-xl" />
             </ScalePress>
           </View>
         </FadeInView>
 
-        <View className="p-6 pt-2">
-          <View className="flex-row flex-wrap gap-4">
-            <FadeInView delay={150} duration={500}>
-              <ScalePress
-                onPress={() => router.push('/organizer/wallet')}
-                className="w-full flex-row items-center justify-between rounded-3xl bg-primary p-7"
-              >
-                <View>
-                  <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-xs uppercase tracking-widest text-white/80">Pending To Pay</Text>
-                  <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="mt-1 text-3xl text-white">₹{stats.pendingToPay.toLocaleString()}</Text>
+        {/* Pending to Pay — full-width hero card */}
+        <View className="pt-5">
+          <FadeInView delay={100} duration={400}>
+            <ScalePress
+              onPress={() => router.push('/organizer/wallet')}
+              className="overflow-hidden"
+              style={{
+                backgroundColor: '#008080',
+                borderRadius: 24,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.12,
+                shadowRadius: 12,
+                elevation: 6,
+              }}
+            >
+              <View className="flex-row items-center justify-between px-6 py-6">
+                <View className="flex-1">
+                  <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-sm uppercase tracking-wider text-white/90">
+                    Pending to pay
+                  </Text>
+                  <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="mt-2 text-4xl text-white">
+                    ₹{stats.pendingToPay.toLocaleString('en-IN')}
+                  </Text>
+                  <Text style={{ fontFamily: 'Inter_500Medium' }} className="mt-2 text-xs text-white/80">
+                    Tap to view wallet & pay
+                  </Text>
                 </View>
                 <View className="rounded-2xl bg-white/20 p-4">
-                  <Icon name="account-balance-wallet" className="text-white text-4xl" />
+                  <Icon name="account-balance-wallet" className="text-white text-5xl" />
+                </View>
+              </View>
+            </ScalePress>
+          </FadeInView>
+        </View>
+
+        {/* Stats row — Active Events & Applicants */}
+        <View className="pt-4">
+          <View className="flex-row gap-3">
+            <SlideInView direction="left" delay={200} duration={400} style={{ flex: 1 }}>
+              <ScalePress
+                onPress={() => router.push('/organizer/events')}
+                className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100"
+              >
+                <View className="flex-row items-center justify-between">
+                  <View>
+                    <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-2xl text-slate-900">{stats.activeGigs}</Text>
+                    <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-xs text-slate-500 mt-1">Active events</Text>
+                  </View>
+                  <View className="h-12 w-12 rounded-xl bg-primary/10 items-center justify-center">
+                    <Icon name="event" className="text-primary text-2xl" />
+                  </View>
                 </View>
               </ScalePress>
-            </FadeInView>
-
-            <SlideInView direction="left" delay={250} duration={450}>
-              <View className="flex-1 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
-                <Icon name="work" className="text-primary mb-2 text-3xl" />
-                <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-3xl text-slate-900">{stats.activeGigs}</Text>
-                <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[10px] text-slate-400 uppercase tracking-widest">Active Events</Text>
-              </View>
             </SlideInView>
-
-            <SlideInView direction="right" delay={300} duration={450}>
-              <View className="flex-1 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-100 border-l-4 border-accent">
-                <Icon name="groups" className="text-slate-300 mb-2 text-3xl" />
-                <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-3xl text-slate-900">{stats.applicants}</Text>
-                <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[10px] text-slate-400 uppercase tracking-widest">Applicants</Text>
+            <SlideInView direction="right" delay={250} duration={400} style={{ flex: 1 }}>
+              <View className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100">
+                <View className="flex-row items-center justify-between">
+                  <View>
+                    <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-2xl text-slate-900">{stats.applicants}</Text>
+                    <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-xs text-slate-500 mt-1">Applicants</Text>
+                  </View>
+                  <View className="h-12 w-12 rounded-xl bg-amber-100 items-center justify-center">
+                    <Icon name="groups" className="text-amber-600 text-2xl" />
+                  </View>
+                </View>
               </View>
             </SlideInView>
           </View>
         </View>
 
-        <FadeInView delay={350} duration={450}>
-          <View className="mt-2">
-            <View className="flex-row items-center justify-between px-6 pb-4">
-              <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-xl text-slate-900">Your Events</Text>
+        {/* Your Events */}
+        <FadeInView delay={300} duration={400}>
+          <View className="mt-6">
+            <View className="flex-row items-center justify-between mb-3">
+              <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-lg text-slate-900">Your events</Text>
               <ScalePress onPress={() => router.push('/organizer/create-event')}>
-                <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-sm text-primary">+ Create New</Text>
+                <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-sm text-primary">+ New event</Text>
               </ScalePress>
             </View>
 
             {isLoading ? (
-              <View className="items-center justify-center py-12">
+              <View className="items-center justify-center py-14">
                 <ActivityIndicator size="large" color="#008080" />
               </View>
             ) : events.length === 0 ? (
-              <View className="mx-6 mb-6 rounded-3xl bg-white p-8 items-center shadow-sm ring-1 ring-slate-100">
-                <Icon name="event" className="text-slate-200 text-6xl mb-4" />
-                <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-lg text-slate-900 mb-2">No Events Yet</Text>
-                <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-sm text-slate-400 mb-6 text-center">
+              <View className="rounded-2xl bg-white p-8 items-center border border-slate-100">
+                <View className="h-16 w-16 rounded-full bg-slate-100 items-center justify-center mb-4">
+                  <Icon name="event" className="text-slate-400 text-4xl" />
+                </View>
+                <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-base text-slate-800 mb-1">No events yet</Text>
+                <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-sm text-slate-500 mb-6 text-center px-4">
                   Create your first event to start hiring gig workers
                 </Text>
                 <ScalePress
                   onPress={() => router.push('/organizer/create-event')}
-                  className="flex-row items-center gap-2 rounded-2xl bg-primary px-6 py-3"
+                  className="flex-row items-center gap-2 rounded-xl bg-primary px-5 py-3"
                 >
-                  <Icon name="add-circle" className="text-white text-xl" />
-                  <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-white">Create Event</Text>
+                  <Icon name="add" className="text-white text-lg" />
+                  <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-white">Create event</Text>
                 </ScalePress>
               </View>
             ) : (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="px-6 pb-6">
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} className="pb-2">
                 {events.map((event, index) => {
                   const date = formatDate(event.event_date);
                   return (
-                    <FadeInView key={event.id} delay={400 + index * 100} duration={400}>
+                    <FadeInView key={event.id} delay={350 + index * 80} duration={350} style={{ marginRight: 12 }}>
                       <ScalePress
                         onPress={() => router.push(`/organizer/events/${event.id}`)}
-                        className="w-[300px] mr-4 bg-white rounded-3xl p-3 shadow-sm ring-1 ring-slate-100"
+                        className="w-[280px] bg-white rounded-2xl overflow-hidden border border-slate-100"
+                        style={{ shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 }}
                       >
-                        <View className="relative aspect-video w-full overflow-hidden rounded-2xl bg-slate-100">
+                        <View className="relative aspect-[16/10] overflow-hidden bg-slate-100">
                           {event.image_url ? (
                             <Image source={{ uri: event.image_url }} className="w-full h-full" resizeMode="cover" />
                           ) : (
-                            <View className="w-full h-full items-center justify-center">
-                              <Icon name="event" className="text-slate-300 text-6xl" />
+                            <View className="w-full h-full items-center justify-center bg-slate-200">
+                              <Icon name="event" className="text-slate-400 text-5xl" />
                             </View>
                           )}
-                          <View className="absolute right-3 top-3 rounded-2xl bg-white/95 px-3 py-2 items-center">
-                            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[10px] uppercase text-primary leading-none">{date.month}</Text>
-                            <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-lg text-slate-900 leading-none mt-1">{date.day}</Text>
+                          <View className="absolute right-3 top-3 rounded-xl bg-white px-3 py-2 items-center shadow-sm">
+                            <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-[10px] uppercase text-primary">{date.month}</Text>
+                            <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-base text-slate-900">{date.day}</Text>
                           </View>
-                          <View className={`absolute left-3 top-3 rounded-full px-3 py-1 ${event.status === 'published' ? 'bg-green-500' : 'bg-slate-200'
-                            }`}>
-                            <Text style={{ fontFamily: 'Inter_700Bold' }} className={`text-[10px] uppercase tracking-wider ${event.status === 'published' ? 'text-white' : 'text-slate-600'
-                              }`}>
-                              {event.status}
-                            </Text>
+                          <View className={`absolute left-3 top-3 rounded-lg px-2.5 py-1 ${event.status === 'published' ? 'bg-emerald-500' : 'bg-slate-400'}`}>
+                            <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-[10px] uppercase text-white">{event.status}</Text>
                           </View>
                         </View>
-                        <View className="px-2 py-3">
-                          <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-lg text-slate-900">{event.title}</Text>
-                          <View className="mt-1 flex-row items-center gap-1">
-                            <Icon name="location-on" className="text-slate-400 text-sm" />
-                            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-xs text-slate-400">{event.location || 'Location TBD'}</Text>
+                        <View className="p-4">
+                          <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-base text-slate-900" numberOfLines={2}>{event.title}</Text>
+                          <View className="mt-2 flex-row items-center gap-1.5">
+                            <Icon name="location-on" className="text-slate-400" size={14} />
+                            <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-xs text-slate-500 flex-1" numberOfLines={1}>{event.location || 'Location TBD'}</Text>
                           </View>
                         </View>
                       </ScalePress>
@@ -208,14 +264,16 @@ const OrganizerDashboard: React.FC = () => {
           </View>
         </FadeInView>
 
-        <FadeInView delay={500} duration={400}>
-          <View className="mt-2 px-6 pb-10">
+        {/* Quick action — Create event */}
+        <FadeInView delay={450} duration={400}>
+          <View className="mt-5 pb-8">
             <ScalePress
               onPress={() => router.push('/organizer/create-event')}
-              className="w-full flex-row items-center justify-center gap-3 rounded-3xl bg-primary py-5"
+              className="flex-row items-center justify-center gap-2 rounded-2xl bg-primary py-4"
+              style={{ shadowColor: '#008080', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 8, elevation: 4 }}
             >
               <Icon name="add-circle" className="text-white text-2xl" />
-              <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-lg text-white">Create New Event</Text>
+              <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-base text-white">Create new event</Text>
             </ScalePress>
           </View>
         </FadeInView>

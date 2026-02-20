@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import socketClient from '../lib/socket';
 import Icon from '../components/Icon';
@@ -38,6 +39,7 @@ const VideoCallScreen: React.FC = () => {
   const { id, conversationId } = useLocalSearchParams<{ id: string; conversationId?: string }>();
   const callId = String(id || '');
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { token, user } = useAuth();
   const [isReady, setIsReady] = useState(false);
   const [peerIds, setPeerIds] = useState<string[]>([]);
@@ -101,11 +103,15 @@ const VideoCallScreen: React.FC = () => {
     }
 
     const setup = async () => {
-      await startLocalStream();
-      socketClient.joinCall(callId);
-      setIsReady(true);
+      try {
+        await startLocalStream();
+        socketClient.joinCall(callId);
+        setIsReady(true);
+      } catch (e) {
+        console.warn('Call setup failed', e);
+      }
     };
-    setup().catch(() => undefined);
+    setup();
 
     const unsubParticipants = socketClient.onCallParticipants((data) => {
       if (data.callId !== callId) return;
@@ -166,10 +172,16 @@ const VideoCallScreen: React.FC = () => {
       unsubAnswer();
       unsubIce();
       socketClient.leaveCall(callId);
-      peerConnectionsRef.current.forEach(pc => pc.close());
+      peerConnectionsRef.current.forEach((pc) => {
+        try {
+          pc.close();
+        } catch (_) {}
+      });
       peerConnectionsRef.current.clear();
       if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach((track: any) => track.stop());
+        try {
+          localStreamRef.current.getTracks().forEach((track: any) => track.stop());
+        } catch (_) {}
       }
     };
   }, [callId, token, user?.id, rtcApi]);
@@ -184,7 +196,7 @@ const VideoCallScreen: React.FC = () => {
 
   return (
     <View className="flex-1 bg-slate-900">
-      <View className="flex-row items-center justify-between p-6 pt-10">
+      <View className="flex-row items-center justify-between px-4" style={{ paddingTop: insets.top + 12, paddingBottom: 8 }}>
         <Pressable onPress={handleLeave} className="h-11 w-11 items-center justify-center rounded-2xl bg-white/10">
           <Icon name="expand-more" className="text-white text-2xl" />
         </Pressable>
@@ -219,7 +231,7 @@ const VideoCallScreen: React.FC = () => {
         )}
       </ScrollView>
 
-      <View className="pb-12 pt-6 px-8">
+      <View className="pt-4 px-6" style={{ paddingBottom: Math.max(insets.bottom, 16) + 8 }}>
         <View className="flex-row items-center justify-between">
           <Pressable onPress={toggleMute} className="items-center gap-2">
             <View className="h-16 w-16 rounded-full bg-white/10 items-center justify-center border border-white/10">

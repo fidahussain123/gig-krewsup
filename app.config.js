@@ -41,6 +41,6 @@ module.exports = {
         projectId: '21f05b5d-b4d1-4ee2-9a99-1be0a5900871',
       },
     },
-    plugins: ['@react-native-community/datetimepicker', './plugins/withCleartextTraffic.js'],
+    plugins: ['@react-native-community/datetimepicker', './plugins/withCleartextTraffic.cjs'],
   },
 };

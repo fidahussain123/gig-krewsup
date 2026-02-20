@@ -20,6 +20,8 @@ const iconMap: Record<string, string> = {
   verified_user: 'verified-user',
   add_a_photo: 'add-a-photo',
   account_balance_wallet: 'account-balance-wallet',
+  delete_outline: 'delete-outline',
+  list: 'list',
 };
 
 type IconProps = React.ComponentProps<typeof MaterialIcons> & {

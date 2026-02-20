@@ -39,6 +39,7 @@ const WorkerLayout: React.FC = () => {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: '#008080',
+        tabBarInactiveTintColor: '#94a3b8',
         tabBarHideOnKeyboard: true,
         tabBarLabelStyle: {
           fontFamily: 'Inter_600SemiBold',
@@ -50,9 +51,9 @@ const WorkerLayout: React.FC = () => {
           backgroundColor: '#ffffff',
           borderTopColor: '#e2e8f0',
           borderTopWidth: 1,
-          paddingTop: 12,
+          paddingTop: 10,
           paddingBottom: Math.max(insets.bottom, 16),
-          height: 66 + Math.max(insets.bottom, 16),
+          height: 64 + Math.max(insets.bottom, 16),
         },
       }}
     >
@@ -67,7 +68,7 @@ const WorkerLayout: React.FC = () => {
         name="messages"
         options={{
           title: 'Messages',
-          tabBarIcon: ({ color, size }) => <MaterialIcons name="chat-bubble" color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => <MaterialIcons name="chat-bubble-outline" color={color} size={size} />,
         }}
       />
       <Tabs.Screen
@@ -78,13 +79,21 @@ const WorkerLayout: React.FC = () => {
         }}
       />
       <Tabs.Screen
+        name="applications"
+        options={{
+          title: 'Applications',
+          tabBarIcon: ({ color, size }) => <MaterialIcons name="event-note" color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color, size }) => <MaterialIcons name="person" color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => <MaterialIcons name="person-outline" color={color} size={size} />,
         }}
       />
       <Tabs.Screen name="gig/[id]" options={{ href: null }} />
+      <Tabs.Screen name="event/[id]" options={{ href: null }} />
       <Tabs.Screen name="onboarding" options={{ href: null }} />
     </Tabs>
   );

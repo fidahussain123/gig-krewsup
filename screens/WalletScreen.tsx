@@ -1,4 +1,3 @@
-
 import React, { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
@@ -18,6 +17,13 @@ const WalletScreen: React.FC<WalletScreenProps> = ({ role }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [appStats, setAppStats] = useState<{ total: number; accepted: number; pending: number; rejected: number }>({
+    total: 0,
+    accepted: 0,
+    pending: 0,
+    rejected: 0,
+  });
+
   const loadSummary = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -30,77 +36,128 @@ const WalletScreen: React.FC<WalletScreenProps> = ({ role }) => {
     setIsLoading(false);
   }, []);
 
+  const loadAppStats = useCallback(async () => {
+    if (role !== 'worker') return;
+    const result = await api.getMyEventApplicationsDetails();
+    if (result.data?.applications) {
+      const apps = result.data.applications as { status: string }[];
+      setAppStats({
+        total: apps.length,
+        accepted: apps.filter(a => a.status === 'accepted').length,
+        pending: apps.filter(a => a.status === 'pending').length,
+        rejected: apps.filter(a => a.status === 'rejected').length,
+      });
+    }
+  }, [role]);
+
   const onRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    await loadSummary();
+    await Promise.all([loadSummary(), loadAppStats()]);
     setIsRefreshing(false);
-  }, [loadSummary]);
+  }, [loadSummary, loadAppStats]);
 
   useEffect(() => {
     loadSummary().catch(() => undefined);
-  }, [loadSummary]);
+    loadAppStats().catch(() => undefined);
+  }, [loadSummary, loadAppStats]);
 
   const displayAmount = pendingTotal ?? 0;
   const mainLabel = role === 'organizer' ? 'Pending To Pay' : 'Pending Earnings';
 
+  const isWorker = role === 'worker';
+
   return (
     <View className="flex-1 bg-slate-50">
-      <View className="bg-white px-6 pb-6 flex-row items-center justify-between border-b border-slate-100" style={{ paddingTop: insets.top + 20 }}>
-        <Pressable onPress={() => router.back()} className="h-12 w-12 items-center justify-center rounded-full">
-          <Icon name="arrow_back_ios_new" className="text-2xl text-slate-700" />
-        </Pressable>
-        <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-xl text-slate-900 tracking-tight">
-          {role === 'organizer' ? 'Wallet & Billing' : 'Worker Earnings'}
-        </Text>
-        <Pressable className="h-12 w-12 items-center justify-center rounded-full">
-          <Icon name="filter-list" className="text-2xl text-primary" />
-        </Pressable>
+      <View
+        className="bg-white border-b border-slate-100 px-4 pb-4"
+        style={{ paddingTop: insets.top + 12 }}
+      >
+        <View className="flex-row items-center justify-between">
+          {isWorker ? (
+            <View className="w-12" />
+          ) : (
+            <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full">
+              <Icon name="arrow_back_ios_new" className="text-xl text-slate-700" />
+            </Pressable>
+          )}
+          <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-lg text-slate-900">
+            {isWorker ? 'Wallet' : 'Wallet & Billing'}
+          </Text>
+          <View className="w-12" />
+        </View>
       </View>
 
       <ScrollView
-        className="flex-1 px-6 py-8"
-        contentContainerStyle={{ paddingTop: 12, paddingBottom: 32 + insets.bottom }}
+        className="flex-1"
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingTop: 20,
+          paddingBottom: 32 + insets.bottom,
+        }}
         refreshControl={
           <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="#008080" />
         }
+        showsVerticalScrollIndicator={false}
       >
-        <View className="bg-primary p-8 rounded-3xl shadow-2xl shadow-primary/30">
-          <View className="flex-row items-center justify-between mb-3">
-            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-white/80 text-sm uppercase tracking-widest">
+        <View className="bg-primary rounded-2xl px-5 pt-5 pb-6 shadow-lg" style={{ shadowColor: '#008080', shadowOpacity: 0.2, shadowRadius: 12, elevation: 4 }}>
+          <View className="flex-row items-center justify-between mb-2">
+            <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-white/80 text-xs uppercase tracking-wider">
               {mainLabel}
             </Text>
-            <Icon name="account_balance_wallet" className="text-white/60" />
-          </View>
-          <View className="flex-row items-end justify-between mb-6">
-            {isLoading && pendingTotal === null ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-5xl tracking-tight text-white">
-                ₹{displayAmount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-              </Text>
-            )}
-            {error && (
-              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-xs text-white/80 max-w-[45%] text-right">
-                {error}
-              </Text>
-            )}
-          </View>
-          <View className="flex-row items-center justify-between gap-6">
-            <View className="flex-1">
-              <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-white/70 text-[10px] uppercase tracking-widest mb-1.5">
-                Pending
-              </Text>
-              <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-xl text-white">
-                ₹{displayAmount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-              </Text>
+            <View className="h-9 w-9 rounded-full bg-white/15 items-center justify-center">
+              <Icon name="account_balance_wallet" className="text-white" size={20} />
             </View>
-            <Pressable className="bg-accent px-8 py-3.5 rounded-2xl">
-              <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-slate-900 text-sm">
-                {role === 'organizer' ? 'Add Funds' : 'Withdraw'}
-              </Text>
-            </Pressable>
           </View>
+          {isLoading && pendingTotal === null ? (
+            <ActivityIndicator color="#fff" size="large" style={{ marginVertical: 24 }} />
+          ) : (
+            <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-4xl text-white tracking-tight mb-5">
+              ₹{displayAmount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+            </Text>
+          )}
+          {error && (
+            <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-white/90 text-xs mb-3">{error}</Text>
+          )}
+          <Pressable className="bg-white rounded-xl py-3 flex-row items-center justify-center gap-2">
+            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary text-sm">{isWorker ? 'Withdraw' : 'Add Funds'}</Text>
+            <Icon name="arrow_forward" className="text-primary" size={18} />
+          </Pressable>
         </View>
+
+        {isWorker && (
+          <>
+            <View className="flex-row items-center justify-between mt-6 mb-3">
+              <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-slate-800 text-base">Applications</Text>
+              <Pressable onPress={() => router.push('/worker/applications')} className="py-1">
+                <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-primary text-sm">View all</Text>
+              </Pressable>
+            </View>
+            <View className="flex-row gap-3">
+              <View className="flex-1 bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
+                <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-400 text-xs uppercase tracking-wider mb-1">Total</Text>
+                <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-2xl text-slate-900">{appStats.total}</Text>
+                <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-500 text-xs mt-0.5">applications</Text>
+              </View>
+              <View className="flex-1 bg-white rounded-xl p-4 border border-green-100 shadow-sm">
+                <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-green-600 text-xs uppercase tracking-wider mb-1">Accepted</Text>
+                <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-2xl text-green-700">{appStats.accepted}</Text>
+                <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-500 text-xs mt-0.5">confirmed</Text>
+              </View>
+            </View>
+            <View className="flex-row gap-3 mt-3">
+              <View className="flex-1 bg-white rounded-xl p-4 border border-amber-100 shadow-sm">
+                <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-amber-600 text-xs uppercase tracking-wider mb-1">Pending</Text>
+                <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-2xl text-amber-700">{appStats.pending}</Text>
+                <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-500 text-xs mt-0.5">awaiting</Text>
+              </View>
+              <View className="flex-1 bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
+                <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-400 text-xs uppercase tracking-wider mb-1">Rejected</Text>
+                <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-2xl text-slate-600">{appStats.rejected}</Text>
+                <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-500 text-xs mt-0.5">declined</Text>
+              </View>
+            </View>
+          </>
+        )}
 
         {role === 'organizer' && (
           <>

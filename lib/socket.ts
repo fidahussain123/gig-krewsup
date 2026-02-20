@@ -26,14 +26,23 @@ class SocketClient {
     this.socket = io(SOCKET_URL, {
       auth: { token },
       transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 20000,
     });
 
     this.socket.on('connect', () => {
       console.log('🔌 Socket connected');
     });
 
-    this.socket.on('disconnect', () => {
-      console.log('🔌 Socket disconnected');
+    this.socket.on('disconnect', (reason) => {
+      console.log('🔌 Socket disconnected:', reason);
+    });
+
+    this.socket.io.on('reconnect_attempt', () => {
+      console.log('🔌 Reconnecting...');
     });
 
     this.socket.on('new_message', (message: any) => {

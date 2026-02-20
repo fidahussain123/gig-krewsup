@@ -10,6 +10,7 @@ interface AuthenticatedSocket extends Socket {
 
 let io: Server;
 const callParticipants = new Map<string, Set<string>>();
+const callMeta = new Map<string, { conversationId: string; startedAt: number }>();
 
 export function initWebSocket(server: HttpServer) {
   const originEnv = process.env.CORS_ORIGIN;
@@ -108,7 +109,7 @@ export function initWebSocket(server: HttpServer) {
       });
     });
 
-    socket.on('disconnect', () => {
+    socket.on('disconnect', async () => {
       if ((socket as any).callIds) {
         for (const callId of (socket as any).callIds as Set<string>) {
           const participants = callParticipants.get(callId);
@@ -116,6 +117,7 @@ export function initWebSocket(server: HttpServer) {
             participants.delete(socket.userId!);
             socket.to(`call:${callId}`).emit('call_user_left', { callId, userId: socket.userId });
             if (participants.size === 0) {
+              await insertCallEndedMessage(callId);
               callParticipants.delete(callId);
             }
           }
@@ -127,6 +129,9 @@ export function initWebSocket(server: HttpServer) {
     // Call signaling
     socket.on('call_invite', (data: { callId: string; toUserId: string; conversationId?: string; mode?: string }) => {
       if (!socket.userId) return;
+      if (data.conversationId) {
+        callMeta.set(data.callId, { conversationId: data.conversationId, startedAt: 0 });
+      }
       emitToUser(data.toUserId, 'call_invite', {
         callId: data.callId,
         fromUserId: socket.userId,
@@ -135,21 +140,40 @@ export function initWebSocket(server: HttpServer) {
       });
     });
 
-    socket.on('call_join', (data: { callId: string }) => {
+    socket.on('call_join', async (data: { callId: string }) => {
       if (!socket.userId) return;
       const callId = data.callId;
       socket.join(`call:${callId}`);
       const participants = callParticipants.get(callId) || new Set<string>();
+      const wasEmpty = participants.size === 0;
       participants.add(socket.userId);
       callParticipants.set(callId, participants);
       (socket as any).callIds = (socket as any).callIds || new Set<string>();
       (socket as any).callIds.add(callId);
+
+      const meta = callMeta.get(callId);
+      if (meta?.conversationId && wasEmpty) {
+        meta.startedAt = Date.now();
+        const msgId = crypto.randomUUID();
+        await db.execute({
+          sql: `INSERT INTO messages (id, conversation_id, content, message_type) VALUES (?, ?, ?, 'system')`,
+          args: [msgId, meta.conversationId, 'Voice call started'],
+        });
+        io.to(`conversation:${meta.conversationId}`).emit('new_message', {
+          id: msgId,
+          conversationId: meta.conversationId,
+          content: 'Voice call started',
+          createdAt: new Date().toISOString(),
+          messageType: 'system',
+        });
+      }
+
       const others = Array.from(participants).filter(id => id !== socket.userId);
       socket.emit('call_participants', { callId, participants: others });
       socket.to(`call:${callId}`).emit('call_user_joined', { callId, userId: socket.userId });
     });
 
-    socket.on('call_leave', (data: { callId: string }) => {
+    socket.on('call_leave', async (data: { callId: string }) => {
       if (!socket.userId) return;
       const callId = data.callId;
       socket.leave(`call:${callId}`);
@@ -158,6 +182,8 @@ export function initWebSocket(server: HttpServer) {
         participants.delete(socket.userId);
         socket.to(`call:${callId}`).emit('call_user_left', { callId, userId: socket.userId });
         if (participants.size === 0) {
+          await insertCallEndedMessage(callId);
+          callMeta.delete(callId);
           callParticipants.delete(callId);
         }
       }
@@ -212,6 +238,26 @@ async function joinUserEventGroups(socket: AuthenticatedSocket) {
   } catch (error) {
     console.error('Error joining user event groups:', error);
   }
+}
+
+async function insertCallEndedMessage(callId: string) {
+  const meta = callMeta.get(callId);
+  if (!meta?.conversationId || meta.startedAt <= 0 || !io) return;
+  const durationSec = Math.round((Date.now() - meta.startedAt) / 1000);
+  const durationStr = durationSec < 60 ? `${durationSec}s` : `${Math.floor(durationSec / 60)}m`;
+  const content = `Voice call ended (${durationStr})`;
+  const msgId = crypto.randomUUID();
+  await db.execute({
+    sql: `INSERT INTO messages (id, conversation_id, content, message_type) VALUES (?, ?, ?, 'system')`,
+    args: [msgId, meta.conversationId, content],
+  });
+  io.to(`conversation:${meta.conversationId}`).emit('new_message', {
+    id: msgId,
+    conversationId: meta.conversationId,
+    content,
+    createdAt: new Date().toISOString(),
+    messageType: 'system',
+  });
 }
 
 // Helper to emit to a specific user
