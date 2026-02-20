@@ -27,12 +27,9 @@ module.exports = {
       permissions: ['RECORD_AUDIO'],
       package: 'com.fidasp.krewsup',
       softwareKeyboardLayoutMode: 'pan',
-      // Allow HTTP (cleartext) so app can reach http://51.21.245.127:3001
+      // CRITICAL: Allow HTTP (cleartext) so app can reach http://51.21.245.127:3001
+      // Without this, Android 9+ blocks all HTTP traffic
       usesCleartextTraffic: true,
-      // Explicitly allow cleartext for EC2 IP
-      networkSecurityConfig: {
-        cleartextTrafficPermitted: true,
-      },
     },
     web: {
       bundler: 'metro',
@@ -44,6 +41,6 @@ module.exports = {
         projectId: '21f05b5d-b4d1-4ee2-9a99-1be0a5900871',
       },
     },
-    plugins: ['@react-native-community/datetimepicker'],
+    plugins: ['@react-native-community/datetimepicker', './plugins/withCleartextTraffic.js'],
   },
 };
