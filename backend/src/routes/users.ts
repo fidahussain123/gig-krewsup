@@ -50,7 +50,7 @@ router.get('/profile', authMiddleware, async (req: AuthRequest, res: Response) =
       city: user.city,
       country: user.country,
       role: user.role,
-      isOnboarded: user.is_onboarded === 1,
+      isOnboarded: Boolean(user.is_onboarded),
       avatarUrl: user.avatar_url,
       profile,
       photos,

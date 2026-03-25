@@ -2,21 +2,17 @@ import { Router, Response, Request } from 'express';
 import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
+import { supabase } from '../config/database.js';
 
 const router = Router();
 
-// Configure multer for memory storage
 const upload = multer({ 
   storage: multer.memoryStorage(),
-  limits: { fileSize: 20 * 1024 * 1024 } // 20MB limit
+  limits: { fileSize: 20 * 1024 * 1024 }
 });
 
-const APPWRITE_ENDPOINT = process.env.APPWRITE_ENDPOINT || 'https://fra.cloud.appwrite.io/v1';
-const APPWRITE_PROJECT_ID = process.env.APPWRITE_PROJECT_ID || '';
-const APPWRITE_API_KEY = process.env.APPWRITE_API_KEY || '';
-const APPWRITE_BUCKET_ID = process.env.APPWRITE_BUCKET_ID || '';
+const STORAGE_BUCKET = process.env.STORAGE_BUCKET || 'uploads';
 
-// Upload file endpoint
 router.post('/upload', authMiddleware, (req, res, next) => {
   upload.single('file')(req, res, (err: any) => {
     if (err) {
@@ -37,41 +33,32 @@ router.post('/upload', authMiddleware, (req, res, next) => {
     }
 
     const fileId = uuidv4();
-    
-    // Create form data for Appwrite
-    const formData = new FormData();
-    formData.append('fileId', fileId);
-    formData.append('file', new Blob([new Uint8Array(req.file.buffer)], { type: req.file.mimetype }), req.file.originalname);
+    const fileExtension = req.file.originalname.split('.').pop() || '';
+    const fileName = `${fileId}.${fileExtension}`;
+    const filePath = `${req.user!.id}/${fileName}`;
 
-    // Upload to Appwrite using server-side API key
-    const response = await fetch(
-      `${APPWRITE_ENDPOINT}/storage/buckets/${APPWRITE_BUCKET_ID}/files`,
-      {
-        method: 'POST',
-        headers: {
-          'X-Appwrite-Project': APPWRITE_PROJECT_ID,
-          'X-Appwrite-Key': APPWRITE_API_KEY,
-        },
-        body: formData,
-      }
-    );
+    const { data, error } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .upload(filePath, req.file.buffer, {
+        contentType: req.file.mimetype,
+        upsert: false
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('Appwrite upload error:', errorData);
-      res.status(response.status).json({ error: errorData.message || 'Upload failed' });
+    if (error) {
+      console.error('Supabase storage upload error:', error);
+      res.status(500).json({ error: error.message || 'Upload failed' });
       return;
     }
 
-    const data = await response.json();
-    
-    // Generate preview URL
-    const fileUrl = `${APPWRITE_ENDPOINT}/storage/buckets/${APPWRITE_BUCKET_ID}/files/${data.$id}/view?project=${APPWRITE_PROJECT_ID}`;
-    
+    const { data: urlData } = supabase.storage
+      .from(STORAGE_BUCKET)
+      .getPublicUrl(filePath);
+
     res.json({
       success: true,
-      fileId: data.$id,
-      fileUrl,
+      fileId: fileId,
+      fileUrl: urlData.publicUrl,
+      path: filePath
     });
   } catch (error: any) {
     console.error('Upload error:', error);
@@ -79,11 +66,51 @@ router.post('/upload', authMiddleware, (req, res, next) => {
   }
 });
 
-// Get file URL
 router.get('/file/:fileId', async (req: Request, res: Response) => {
   const { fileId } = req.params;
-  const fileUrl = `${APPWRITE_ENDPOINT}/storage/buckets/${APPWRITE_BUCKET_ID}/files/${fileId}/view?project=${APPWRITE_PROJECT_ID}`;
-  res.json({ fileUrl });
+  
+  const { data: files, error } = await supabase.storage
+    .from(STORAGE_BUCKET)
+    .list('', {
+      search: fileId
+    });
+
+  if (error || !files || files.length === 0) {
+    res.status(404).json({ error: 'File not found' });
+    return;
+  }
+
+  const { data: urlData } = supabase.storage
+    .from(STORAGE_BUCKET)
+    .getPublicUrl(files[0].name);
+
+  res.json({ fileUrl: urlData.publicUrl });
+});
+
+router.delete('/file/:path(*)', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const filePath = req.params.path;
+
+    if (!filePath.startsWith(req.user!.id)) {
+      res.status(403).json({ error: 'Not authorized to delete this file' });
+      return;
+    }
+
+    const { error } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .remove([filePath]);
+
+    if (error) {
+      console.error('Supabase storage delete error:', error);
+      res.status(500).json({ error: error.message || 'Delete failed' });
+      return;
+    }
+
+    res.json({ success: true, message: 'File deleted' });
+  } catch (error: any) {
+    console.error('Delete error:', error);
+    res.status(500).json({ error: error.message || 'Delete failed' });
+  }
 });
 
 export default router;

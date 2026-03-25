@@ -1,5 +1,5 @@
 // File Upload via Backend Proxy
-// This module handles file uploads through our backend, which proxies to Appwrite
+// This module handles file uploads through our backend, which uses Supabase Storage
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
 import { Platform } from 'react-native';

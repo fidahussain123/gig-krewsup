@@ -94,7 +94,7 @@ router.post('/login', async (req: Request, res: Response) => {
         email: user.email,
         name: user.name,
         role: user.role,
-        isOnboarded: user.is_onboarded === 1,
+        isOnboarded: Boolean(user.is_onboarded),
         phone: user.phone,
         city: user.city,
         country: user.country,
@@ -145,7 +145,7 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
         email: user.email,
         name: user.name,
         role: user.role,
-        isOnboarded: user.is_onboarded === 1,
+        isOnboarded: Boolean(user.is_onboarded),
         phone: user.phone,
         city: user.city,
         country: user.country,
@@ -178,12 +178,12 @@ router.post('/set-role', authMiddleware, async (req: AuthRequest, res: Response)
     const profileId = uuidv4();
     if (role === 'organizer') {
       await db.execute({
-        sql: 'INSERT OR IGNORE INTO organizer_profiles (id, user_id) VALUES (?, ?)',
+        sql: 'INSERT INTO organizer_profiles (id, user_id) VALUES (?, ?) ON CONFLICT (user_id) DO NOTHING',
         args: [profileId, req.user!.id],
       });
     } else {
       await db.execute({
-        sql: 'INSERT OR IGNORE INTO worker_profiles (id, user_id) VALUES (?, ?)',
+        sql: 'INSERT INTO worker_profiles (id, user_id) VALUES (?, ?) ON CONFLICT (user_id) DO NOTHING',
         args: [profileId, req.user!.id],
       });
     }
@@ -227,7 +227,7 @@ router.post('/onboarding', authMiddleware, async (req: AuthRequest, res: Respons
             city = COALESCE(?, city),
             country = COALESCE(?, country),
             avatar_url = COALESCE(?, avatar_url),
-            is_onboarded = 1,
+            is_onboarded = true,
             updated_at = CURRENT_TIMESTAMP
             WHERE id = ?`,
       args: [name ?? null, phone ?? null, city ?? null, country ?? null, avatarUrl ?? null, userId],

@@ -1,9 +1,10 @@
 /**
- * API and socket URLs. Set to EC2 so app/APK always uses this server.
- * To change server: edit EC2_API and EC2_SOCKET below.
+ * API and socket URLs for development and production.
+ * For local development, use localhost.
+ * For production, update with your deployed server URL.
  */
-const EC2_API = 'http://51.21.245.127:3001/api';
-const EC2_SOCKET = 'http://51.21.245.127:3001/';
+const LOCAL_API = 'http://localhost:3001/api';
+const LOCAL_SOCKET = 'http://localhost:3001/';
 
-export const API_BASE_URL = EC2_API;
-export const SOCKET_BASE_URL = EC2_SOCKET;
+export const API_BASE_URL = LOCAL_API;
+export const SOCKET_BASE_URL = LOCAL_SOCKET;

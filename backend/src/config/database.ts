@@ -1,79 +1,79 @@
-import { createClient } from '@libsql/client';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import pg from 'pg';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-if (!process.env.TURSO_DATABASE_URL || !process.env.TURSO_AUTH_TOKEN) {
-  throw new Error('Missing Turso database configuration. Check your .env file.');
+const { Pool } = pg;
+
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  throw new Error('Missing Supabase configuration. Check SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in your .env file.');
 }
 
-export const db = createClient({
-  url: process.env.TURSO_DATABASE_URL,
-  authToken: process.env.TURSO_AUTH_TOKEN,
+if (!process.env.DATABASE_URL) {
+  throw new Error('Missing DATABASE_URL in your .env file.');
+}
+
+export const supabase: SupabaseClient = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
-const runColumnMigrations = async (table: string, columns: { name: string; sql: string }[]) => {
-  for (const col of columns) {
+interface QueryResult {
+  rows: any[];
+  rowsAffected: number;
+}
+
+interface DbExecuteOptions {
+  sql: string;
+  args?: any[];
+}
+
+export const db = {
+  async execute(options: DbExecuteOptions | string): Promise<QueryResult> {
+    const sql = typeof options === 'string' ? options : options.sql;
+    const args = typeof options === 'string' ? [] : (options.args || []);
+
+    const convertedSql = convertPlaceholders(sql);
+
     try {
-      await db.execute({ sql: col.sql, args: [] });
-      console.log(`✓ Added column ${table}.${col.name}`);
+      const result = await pool.query(convertedSql, args);
+      return {
+        rows: result.rows,
+        rowsAffected: result.rowCount || 0
+      };
     } catch (error: any) {
-      if (error.message?.includes('duplicate column')) {
-        continue;
-      }
-      console.log(`  Note: ${table}.${col.name} - ${error.message}`);
+      console.error('Database query error:', error.message);
+      console.error('SQL:', convertedSql);
+      console.error('Args:', args);
+      throw error;
     }
   }
 };
 
-export async function ensureSchema(): Promise<void> {
-  try {
-    await db.execute({
-      sql: `CREATE TABLE IF NOT EXISTS worker_photos (
-            id TEXT PRIMARY KEY,
-            user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
-            url TEXT NOT NULL,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-          )`,
-      args: [],
-    });
-    await db.execute({
-      sql: 'CREATE INDEX IF NOT EXISTS idx_worker_photos_user ON worker_photos(user_id)',
-      args: [],
-    });
-    await db.execute({
-      sql: `CREATE TABLE IF NOT EXISTS device_tokens (
-            id TEXT PRIMARY KEY,
-            user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
-            token TEXT NOT NULL UNIQUE,
-            platform TEXT,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-          )`,
-      args: [],
-    });
-    await db.execute({
-      sql: 'CREATE INDEX IF NOT EXISTS idx_device_tokens_user ON device_tokens(user_id)',
-      args: [],
-    });
-    await runColumnMigrations('applications', [
-      { name: 'event_id', sql: 'ALTER TABLE applications ADD COLUMN event_id TEXT' },
-      { name: 'user_id', sql: 'ALTER TABLE applications ADD COLUMN user_id TEXT' },
-    ]);
-    await runColumnMigrations('worker_profiles', [
-      { name: 'age', sql: 'ALTER TABLE worker_profiles ADD COLUMN age INTEGER' },
-      { name: 'gender', sql: 'ALTER TABLE worker_profiles ADD COLUMN gender TEXT' },
-      { name: 'aadhaar_doc_url', sql: 'ALTER TABLE worker_profiles ADD COLUMN aadhaar_doc_url TEXT' },
-      { name: 'verification_status', sql: "ALTER TABLE worker_profiles ADD COLUMN verification_status TEXT DEFAULT 'pending'" },
-    ]);
-    console.log('✅ Schema ensured');
-  } catch (error) {
-    console.error('❌ Schema ensure failed:', error);
-  }
+function convertPlaceholders(sql: string): string {
+  let paramIndex = 0;
+  let converted = sql.replace(/\?/g, () => {
+    paramIndex++;
+    return `$${paramIndex}`;
+  });
+  
+  // Convert SQLite CURRENT_TIMESTAMP to PostgreSQL NOW()
+  converted = converted.replace(/CURRENT_TIMESTAMP/gi, 'NOW()');
+  
+  return converted;
 }
 
 export async function testConnection(): Promise<boolean> {
   try {
-    await db.execute('SELECT 1');
+    await pool.query('SELECT 1');
     console.log('✅ Database connection successful');
     return true;
   } catch (error) {
@@ -81,3 +81,9 @@ export async function testConnection(): Promise<boolean> {
     return false;
   }
 }
+
+export async function ensureSchema(): Promise<void> {
+  console.log('✅ Using Supabase - schema managed via SQL Editor');
+}
+
+export { pool };

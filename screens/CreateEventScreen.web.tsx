@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, Image, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import { ActivityIndicator, Image, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import * as DocumentPicker from 'expo-document-picker';
 import api from '../lib/api';
@@ -35,14 +34,6 @@ const CreateEventScreen: React.FC = () => {
     malePay: 0,
     femalePay: 0,
   });
-  const [startDateValue, setStartDateValue] = useState<Date | null>(null);
-  const [endDateValue, setEndDateValue] = useState<Date | null>(null);
-  const [startTimeValue, setStartTimeValue] = useState<Date | null>(null);
-  const [endTimeValue, setEndTimeValue] = useState<Date | null>(null);
-  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
-  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
-  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
-  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
   const [locationQuery, setLocationQuery] = useState('');
   const [locationResults, setLocationResults] = useState<any[]>([]);
   const [isSearchingLocation, setIsSearchingLocation] = useState(false);
@@ -61,10 +52,6 @@ const CreateEventScreen: React.FC = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
     setError('');
   };
-
-  const formatDate = (value: Date) => value.toISOString().slice(0, 10);
-  const formatTime = (value: Date) =>
-    value.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
   useEffect(() => {
     if (!locationQuery || locationQuery.trim().length < 3) {
@@ -241,94 +228,91 @@ const CreateEventScreen: React.FC = () => {
             multiline
           />
           <Text className="text-xs font-extrabold uppercase tracking-widest text-slate-400 mt-2">Schedule</Text>
-          <Pressable
-            onPress={() => setShowStartDatePicker(true)}
-            className="w-full rounded-2xl border border-slate-100 bg-white h-12 px-4 justify-center"
-          >
-            <Text className="text-sm font-medium text-slate-700">
-              {formData.startDate ? `Start Date: ${formData.startDate}` : 'Select Start Date *'}
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={() => setShowEndDatePicker(true)}
-            className="w-full rounded-2xl border border-slate-100 bg-white h-12 px-4 justify-center"
-          >
-            <Text className="text-sm font-medium text-slate-700">
-              {formData.endDate ? `End Date: ${formData.endDate}` : 'Select End Date'}
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={() => setShowStartTimePicker(true)}
-            className="w-full rounded-2xl border border-slate-100 bg-white h-12 px-4 justify-center"
-          >
-            <Text className="text-sm font-medium text-slate-700">
-              {formData.startTime ? `Start Time: ${formData.startTime}` : 'Select Start Time'}
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={() => setShowEndTimePicker(true)}
-            className="w-full rounded-2xl border border-slate-100 bg-white h-12 px-4 justify-center"
-          >
-            <Text className="text-sm font-medium text-slate-700">
-              {formData.endTime ? `End Time: ${formData.endTime}` : 'Select End Time'}
-            </Text>
-          </Pressable>
-          {showStartDatePicker && (
-            <DateTimePicker
-              value={startDateValue || new Date()}
-              mode="date"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={(event, date) => {
-                setShowStartDatePicker(false);
-                if (date) {
-                  setStartDateValue(date);
-                  handleChange('startDate', formatDate(date));
-                }
-              }}
-            />
-          )}
-          {showEndDatePicker && (
-            <DateTimePicker
-              value={endDateValue || startDateValue || new Date()}
-              mode="date"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={(event, date) => {
-                setShowEndDatePicker(false);
-                if (date) {
-                  setEndDateValue(date);
-                  handleChange('endDate', formatDate(date));
-                }
-              }}
-            />
-          )}
-          {showStartTimePicker && (
-            <DateTimePicker
-              value={startTimeValue || new Date()}
-              mode="time"
-              display={Platform.OS === 'ios' ? 'spinner' : 'clock'}
-              onChange={(event, date) => {
-                setShowStartTimePicker(false);
-                if (date) {
-                  setStartTimeValue(date);
-                  handleChange('startTime', formatTime(date));
-                }
-              }}
-            />
-          )}
-          {showEndTimePicker && (
-            <DateTimePicker
-              value={endTimeValue || startTimeValue || new Date()}
-              mode="time"
-              display={Platform.OS === 'ios' ? 'spinner' : 'clock'}
-              onChange={(event, date) => {
-                setShowEndTimePicker(false);
-                if (date) {
-                  setEndTimeValue(date);
-                  handleChange('endTime', formatTime(date));
-                }
-              }}
-            />
-          )}
+          <View className="flex-row gap-3">
+            <View className="flex-1">
+              <Text className="text-[11px] font-bold text-slate-400 mb-2">Start Date *</Text>
+              <input
+                type="date"
+                value={formData.startDate}
+                onChange={(e) => handleChange('startDate', e.target.value)}
+                style={{
+                  width: '100%',
+                  height: 48,
+                  borderRadius: 16,
+                  border: '1px solid #f1f5f9',
+                  backgroundColor: 'white',
+                  paddingLeft: 16,
+                  paddingRight: 16,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: '#334155',
+                }}
+              />
+            </View>
+            <View className="flex-1">
+              <Text className="text-[11px] font-bold text-slate-400 mb-2">End Date</Text>
+              <input
+                type="date"
+                value={formData.endDate}
+                onChange={(e) => handleChange('endDate', e.target.value)}
+                min={formData.startDate}
+                style={{
+                  width: '100%',
+                  height: 48,
+                  borderRadius: 16,
+                  border: '1px solid #f1f5f9',
+                  backgroundColor: 'white',
+                  paddingLeft: 16,
+                  paddingRight: 16,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: '#334155',
+                }}
+              />
+            </View>
+          </View>
+          <View className="flex-row gap-3">
+            <View className="flex-1">
+              <Text className="text-[11px] font-bold text-slate-400 mb-2">Start Time</Text>
+              <input
+                type="time"
+                value={formData.startTime}
+                onChange={(e) => handleChange('startTime', e.target.value)}
+                style={{
+                  width: '100%',
+                  height: 48,
+                  borderRadius: 16,
+                  border: '1px solid #f1f5f9',
+                  backgroundColor: 'white',
+                  paddingLeft: 16,
+                  paddingRight: 16,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: '#334155',
+                }}
+              />
+            </View>
+            <View className="flex-1">
+              <Text className="text-[11px] font-bold text-slate-400 mb-2">End Time</Text>
+              <input
+                type="time"
+                value={formData.endTime}
+                onChange={(e) => handleChange('endTime', e.target.value)}
+                style={{
+                  width: '100%',
+                  height: 48,
+                  borderRadius: 16,
+                  border: '1px solid #f1f5f9',
+                  backgroundColor: 'white',
+                  paddingLeft: 16,
+                  paddingRight: 16,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: '#334155',
+                }}
+              />
+            </View>
+          </View>
           <Text className="text-xs font-extrabold uppercase tracking-widest text-slate-400 mt-2">Location</Text>
           <TextInput
             value={locationQuery}
