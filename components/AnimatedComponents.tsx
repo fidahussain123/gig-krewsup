@@ -52,7 +52,7 @@ export const FadeInView: React.FC<FadeInViewProps> = ({
     );
 };
 
-// ─── ScalePress ─────────────────────────────────────────────
+// ─── ScalePress (enhanced with District-style spring) ───────
 interface ScalePressProps {
     children: React.ReactNode;
     onPress?: () => void;
@@ -68,7 +68,7 @@ export const ScalePress: React.FC<ScalePressProps> = ({
     disabled,
     className,
     style,
-    scaleValue = 0.97,
+    scaleValue = 0.96,
 }) => {
     const scale = useSharedValue(1);
 
@@ -77,11 +77,11 @@ export const ScalePress: React.FC<ScalePressProps> = ({
     }));
 
     const handlePressIn = useCallback(() => {
-        scale.value = withSpring(scaleValue, { damping: 15, stiffness: 300 });
+        scale.value = withSpring(scaleValue, { damping: 12, stiffness: 350, mass: 0.5 });
     }, [scaleValue]);
 
     const handlePressOut = useCallback(() => {
-        scale.value = withSpring(1, { damping: 15, stiffness: 300 });
+        scale.value = withSpring(1, { damping: 12, stiffness: 350, mass: 0.5 });
     }, []);
 
     return (
@@ -160,8 +160,8 @@ interface StaggeredListProps {
 
 export const StaggeredList: React.FC<StaggeredListProps> = ({
     children,
-    staggerDelay = 80,
-    initialDelay = 100,
+    staggerDelay = 60,
+    initialDelay = 80,
     style,
 }) => {
     return (
@@ -178,5 +178,45 @@ export const StaggeredList: React.FC<StaggeredListProps> = ({
                 </FadeInView>
             ))}
         </>
+    );
+};
+
+// ─── ScaleInView (entrance animation with scale) ────────────
+interface ScaleInViewProps {
+    children: React.ReactNode;
+    delay?: number;
+    duration?: number;
+    style?: ViewStyle;
+}
+
+export const ScaleInView: React.FC<ScaleInViewProps> = ({
+    children,
+    delay = 0,
+    duration = 500,
+    style,
+}) => {
+    const opacity = useSharedValue(0);
+    const scale = useSharedValue(0.85);
+
+    useEffect(() => {
+        opacity.value = withDelay(
+            delay,
+            withTiming(1, { duration, easing: Easing.out(Easing.cubic) })
+        );
+        scale.value = withDelay(
+            delay,
+            withSpring(1, { damping: 12, stiffness: 200 })
+        );
+    }, []);
+
+    const animatedStyle = useAnimatedStyle(() => ({
+        opacity: opacity.value,
+        transform: [{ scale: scale.value }],
+    }));
+
+    return (
+        <Animated.View style={[style, animatedStyle]}>
+            {children}
+        </Animated.View>
     );
 };

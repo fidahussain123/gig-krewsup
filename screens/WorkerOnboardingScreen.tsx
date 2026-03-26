@@ -6,6 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import { uploadFile, UploadAsset } from '../lib/storage';
 import Icon from '../components/Icon';
+import { FadeInView } from '../components/AnimatedComponents';
+import { GlassCard } from '../components/DistrictUI';
 
 const WorkerOnboardingScreen: React.FC = () => {
   const router = useRouter();
@@ -120,8 +122,8 @@ const WorkerOnboardingScreen: React.FC = () => {
       phone: formData.phone,
       city: formData.city,
       country: formData.country,
-      age: Number(formData.age),
-      experienceYears: Number(formData.experienceYears),
+      age: Number(formData.age.replace(',', '.')) || 0,
+      experienceYears: Number(formData.experienceYears.replace(',', '.')) || 0,
       gender: formData.gender,
       avatarUrl,
       aadhaarDocUrl,
@@ -150,22 +152,33 @@ const WorkerOnboardingScreen: React.FC = () => {
   );
 
   return (
-    <KeyboardAvoidingView className="flex-1 bg-slate-50" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View className="px-6 pb-6 bg-white border-b border-slate-100" style={{ paddingTop: insets.top + 20 }}>
-        <View className="flex-row items-center gap-4 mb-6">
-          <View className="h-14 w-14 rounded-2xl bg-accent/20 items-center justify-center">
-            <Icon name="emoji-people" className="text-yellow-700 text-3xl" />
+    <KeyboardAvoidingView className="flex-1 bg-surface-secondary" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      {/* Header */}
+      <View
+        className="px-6 pb-5 bg-white"
+        style={{
+          paddingTop: insets.top + 16,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.04,
+          shadowRadius: 8,
+          elevation: 2,
+        }}
+      >
+        <View className="flex-row items-center gap-4 mb-5">
+          <View className="h-14 w-14 rounded-2xl bg-accent-50 items-center justify-center">
+            <Icon name="emoji-people" className="text-accent text-3xl" />
           </View>
           <View>
-            <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-xl text-slate-900 tracking-tight">
+            <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-xl text-primary-900 tracking-tight">
               Your Details
             </Text>
-            <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-sm text-slate-400 mt-1">
+            <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-sm text-slate-400 mt-1">
               Let's set up your worker profile
             </Text>
           </View>
         </View>
-        <View className="flex-row gap-1">
+        <View className="flex-row gap-1.5">
           {[1, 2, 3].map((step) => (
             <View key={step} className={`h-1.5 flex-1 rounded-full ${step === 1 ? 'bg-accent' : 'bg-slate-200'}`} />
           ))}
@@ -174,200 +187,294 @@ const WorkerOnboardingScreen: React.FC = () => {
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ padding: 24, paddingTop: 16, paddingBottom: 56 + insets.bottom }}
+        contentContainerStyle={{ padding: 20, paddingTop: 16, paddingBottom: 56 + insets.bottom }}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
       >
         {error && (
-          <View className="mb-4 p-4 bg-red-50 rounded-xl">
-            <Text className="text-red-600 text-sm font-medium">{error}</Text>
+          <View className="mb-4 p-4 bg-error/10 rounded-2xl">
+            <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-error text-sm">{error}</Text>
           </View>
         )}
 
-        <View className="space-y-6 max-w-lg mx-auto">
-          <View className="items-center">
+        {/* Profile Photo */}
+        <FadeInView delay={0} duration={400}>
+          <View className="items-center mb-6">
             <Pressable onPress={handleProfileSelect} className="relative">
-              <View className="h-28 w-28 rounded-full bg-slate-100 border-4 border-white shadow-xl overflow-hidden items-center justify-center">
+              <View
+                className="h-28 w-28 rounded-full bg-surface-tertiary border-4 border-white overflow-hidden items-center justify-center"
+                style={{
+                  shadowColor: '#E94560',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.15,
+                  shadowRadius: 12,
+                  elevation: 4,
+                }}
+              >
                 {profilePreview ? (
                   <Image source={{ uri: profilePreview }} className="w-full h-full" resizeMode="cover" />
                 ) : (
                   <Icon name="person" className="text-slate-300 text-5xl" />
                 )}
               </View>
-              <View className="absolute -bottom-1 -right-1 h-10 w-10 bg-primary rounded-full border-4 border-white items-center justify-center shadow-lg">
+              <View className="absolute -bottom-1 -right-1 h-10 w-10 bg-accent rounded-full border-4 border-white items-center justify-center">
                 <Icon name="add_a_photo" className="text-white text-lg" />
               </View>
             </Pressable>
-            <Text className="text-sm font-bold text-slate-400 mt-4">Profile Photo *</Text>
+            <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-sm text-slate-400 mt-4">Profile Photo *</Text>
           </View>
+        </FadeInView>
 
-          <View className="flex flex-col">
-            <Text className="text-sm font-extrabold text-slate-900 pb-2 px-1">
-              Full Name <Text className="text-red-500">*</Text>
-            </Text>
-            <TextInput
-              value={formData.fullName}
-              onChangeText={(value) => handleChange('fullName', value)}
-              className="w-full rounded-2xl border border-slate-100 bg-white h-14 px-5 text-base font-medium"
-              placeholder="John Doe"
-            />
-          </View>
-
-          <View className="flex-row gap-4">
-            <View className="flex-1">
-              <Text className="text-sm font-extrabold text-slate-900 pb-2 px-1">
-                Age <Text className="text-red-500">*</Text>
-              </Text>
-              <TextInput
-                value={formData.age}
-                onChangeText={(value) => handleChange('age', value)}
-                className="w-full rounded-2xl border border-slate-100 bg-white h-14 px-5 text-base font-medium"
-                placeholder="Age"
-                keyboardType="numeric"
-              />
+        {/* Personal Info */}
+        <FadeInView delay={100} duration={400}>
+          <GlassCard>
+            <View className="flex-row items-center gap-2 mb-4">
+              <Icon name="person" className="text-accent text-lg" />
+              <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900">Personal Information</Text>
             </View>
-            <View className="flex-1">
-              <Text className="text-sm font-extrabold text-slate-900 pb-2 px-1">
-                Gender <Text className="text-red-500">*</Text>
-              </Text>
-              <TextInput
-                value={formData.gender}
-                onChangeText={(value) => handleChange('gender', value)}
-                className="w-full rounded-2xl border border-slate-100 bg-white h-14 px-5 text-base font-medium"
-                placeholder="Male/Female/Other"
-              />
+            <View className="gap-4">
+              <View>
+                <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[11px] uppercase tracking-widest text-slate-400 mb-2">
+                  Full Name <Text className="text-accent">*</Text>
+                </Text>
+                <View className="h-14 rounded-2xl bg-surface-tertiary px-4 justify-center">
+                  <TextInput
+                    value={formData.fullName}
+                    onChangeText={(value) => handleChange('fullName', value)}
+                    placeholder="John Doe"
+                    placeholderTextColor="#B8B8D0"
+                    style={{ fontFamily: 'Inter_500Medium' }}
+                    className="text-base text-primary-900"
+                  />
+                </View>
+              </View>
+              <View className="flex-row gap-3">
+                <View className="flex-1">
+                  <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[11px] uppercase tracking-widest text-slate-400 mb-2">
+                    Age <Text className="text-accent">*</Text>
+                  </Text>
+                  <View className="h-14 rounded-2xl bg-surface-tertiary px-4 justify-center">
+                    <TextInput
+                      value={formData.age}
+                      onChangeText={(value) => handleChange('age', value)}
+                      placeholder="25"
+                      placeholderTextColor="#B8B8D0"
+                      keyboardType="numeric"
+                      style={{ fontFamily: 'Inter_500Medium' }}
+                      className="text-base text-primary-900"
+                    />
+                  </View>
+                </View>
+                <View className="flex-1">
+                  <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[11px] uppercase tracking-widest text-slate-400 mb-2">
+                    Gender <Text className="text-accent">*</Text>
+                  </Text>
+                  <View className="h-14 rounded-2xl bg-surface-tertiary px-4 justify-center">
+                    <TextInput
+                      value={formData.gender}
+                      onChangeText={(value) => handleChange('gender', value)}
+                      placeholder="Male/Female/Other"
+                      placeholderTextColor="#B8B8D0"
+                      style={{ fontFamily: 'Inter_500Medium' }}
+                      className="text-base text-primary-900"
+                    />
+                  </View>
+                </View>
+              </View>
+              <View>
+                <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[11px] uppercase tracking-widest text-slate-400 mb-2">
+                  Experience (Years) <Text className="text-accent">*</Text>
+                </Text>
+                <View className="h-14 rounded-2xl bg-surface-tertiary px-4 justify-center">
+                  <TextInput
+                    value={formData.experienceYears}
+                    onChangeText={(value) => handleChange('experienceYears', value)}
+                    placeholder="2"
+                    placeholderTextColor="#B8B8D0"
+                    keyboardType="numeric"
+                    style={{ fontFamily: 'Inter_500Medium' }}
+                    className="text-base text-primary-900"
+                  />
+                </View>
+              </View>
             </View>
-          </View>
-          <View className="flex flex-col">
-            <Text className="text-sm font-extrabold text-slate-900 pb-2 px-1">
-              Experience (Years) <Text className="text-red-500">*</Text>
-            </Text>
-            <TextInput
-              value={formData.experienceYears}
-              onChangeText={(value) => handleChange('experienceYears', value)}
-              className="w-full rounded-2xl border border-slate-100 bg-white h-14 px-5 text-base font-medium"
-              placeholder="Years"
-              keyboardType="numeric"
-            />
-          </View>
+          </GlassCard>
+        </FadeInView>
 
-          <View className="flex flex-col">
-            <Text className="text-sm font-extrabold text-slate-900 pb-2 px-1">
-              Email Address <Text className="text-red-500">*</Text>
-            </Text>
-            <TextInput
-              value={formData.email}
-              onChangeText={(value) => handleChange('email', value)}
-              className="w-full rounded-2xl border border-slate-100 bg-white h-14 px-5 text-base font-medium"
-              placeholder="john@email.com"
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
-          </View>
-
-          <View className="flex flex-col">
-            <Text className="text-sm font-extrabold text-slate-900 pb-2 px-1">
-              Phone Number <Text className="text-red-500">*</Text>
-            </Text>
-            <TextInput
-              value={formData.phone}
-              onChangeText={(value) => handleChange('phone', value)}
-              className="w-full rounded-2xl border border-slate-100 bg-white h-14 px-5 text-base font-medium"
-              placeholder="+1 (555) 000-0000"
-              keyboardType="phone-pad"
-            />
-          </View>
-
-          <View className="flex-row gap-4">
-            <View className="flex-1">
-              <Text className="text-sm font-extrabold text-slate-900 pb-2 px-1">City</Text>
-              <TextInput
-                value={formData.city}
-                onChangeText={(value) => handleChange('city', value)}
-                className="w-full rounded-2xl border border-slate-100 bg-white h-14 px-5 text-base font-medium"
-                placeholder="San Francisco"
-              />
-            </View>
-            <View className="flex-1">
-              <Text className="text-sm font-extrabold text-slate-900 pb-2 px-1">Country</Text>
-              <TextInput
-                value={formData.country}
-                onChangeText={(value) => handleChange('country', value)}
-                className="w-full rounded-2xl border border-slate-100 bg-white h-14 px-5 text-base font-medium"
-                placeholder="United States"
-              />
-            </View>
-          </View>
-
-          <View className="bg-white rounded-2xl p-5 border border-slate-100">
-            <View className="flex-row items-center justify-between mb-4">
-              <View className="flex-row items-center gap-3">
-                <View className="h-12 w-12 rounded-xl bg-primary/10 items-center justify-center">
-                  <Icon name="verified_user" className="text-primary text-2xl" />
+        {/* Contact Info */}
+        <FadeInView delay={200} duration={400}>
+          <View className="mt-3">
+            <GlassCard>
+              <View className="flex-row items-center gap-2 mb-4">
+                <Icon name="mail" className="text-accent text-lg" />
+                <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900">Contact Details</Text>
+              </View>
+              <View className="gap-4">
+                <View>
+                  <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[11px] uppercase tracking-widest text-slate-400 mb-2">
+                    Email <Text className="text-accent">*</Text>
+                  </Text>
+                  <View className="h-14 rounded-2xl bg-surface-tertiary px-4 justify-center">
+                    <TextInput
+                      value={formData.email}
+                      onChangeText={(value) => handleChange('email', value)}
+                      placeholder="john@email.com"
+                      placeholderTextColor="#B8B8D0"
+                      autoCapitalize="none"
+                      keyboardType="email-address"
+                      style={{ fontFamily: 'Inter_500Medium' }}
+                      className="text-base text-primary-900"
+                    />
+                  </View>
                 </View>
                 <View>
-                  <Text className="font-extrabold text-slate-900 text-sm">Aadhaar Verification *</Text>
-                  <Text className="text-xs text-slate-500 mt-1">Upload Aadhaar document for verification.</Text>
+                  <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[11px] uppercase tracking-widest text-slate-400 mb-2">
+                    Phone <Text className="text-accent">*</Text>
+                  </Text>
+                  <View className="h-14 rounded-2xl bg-surface-tertiary px-4 justify-center">
+                    <TextInput
+                      value={formData.phone}
+                      onChangeText={(value) => handleChange('phone', value)}
+                      placeholder="+91 98765 43210"
+                      placeholderTextColor="#B8B8D0"
+                      keyboardType="phone-pad"
+                      style={{ fontFamily: 'Inter_500Medium' }}
+                      className="text-base text-primary-900"
+                    />
+                  </View>
+                </View>
+                <View className="flex-row gap-3">
+                  <View className="flex-1">
+                    <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[11px] uppercase tracking-widest text-slate-400 mb-2">City</Text>
+                    <View className="h-14 rounded-2xl bg-surface-tertiary px-4 justify-center">
+                      <TextInput
+                        value={formData.city}
+                        onChangeText={(value) => handleChange('city', value)}
+                        placeholder="Mumbai"
+                        placeholderTextColor="#B8B8D0"
+                        style={{ fontFamily: 'Inter_500Medium' }}
+                        className="text-base text-primary-900"
+                      />
+                    </View>
+                  </View>
+                  <View className="flex-1">
+                    <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[11px] uppercase tracking-widest text-slate-400 mb-2">Country</Text>
+                    <View className="h-14 rounded-2xl bg-surface-tertiary px-4 justify-center">
+                      <TextInput
+                        value={formData.country}
+                        onChangeText={(value) => handleChange('country', value)}
+                        placeholder="India"
+                        placeholderTextColor="#B8B8D0"
+                        style={{ fontFamily: 'Inter_500Medium' }}
+                        className="text-base text-primary-900"
+                      />
+                    </View>
+                  </View>
                 </View>
               </View>
-              <Pressable onPress={handleAadhaarSelect} className="px-4 py-2 rounded-xl bg-primary/5">
-                <Text className="text-primary text-xs font-extrabold">Upload</Text>
-              </Pressable>
-            </View>
-            {aadhaarPreview ? (
-              <View className="w-full rounded-xl overflow-hidden border border-slate-100">
-                <Image source={{ uri: aadhaarPreview }} className="w-full h-40" resizeMode="cover" />
-              </View>
-            ) : (
-              <View className="w-full h-28 rounded-xl bg-slate-50 border border-dashed border-slate-200 items-center justify-center">
-                <Text className="text-slate-400 text-sm font-bold">No Aadhaar uploaded</Text>
-              </View>
-            )}
+            </GlassCard>
           </View>
+        </FadeInView>
 
-          <View className="bg-white rounded-2xl p-5 border border-slate-100">
-            <View className="flex-row items-center justify-between mb-4">
-              <View>
-                <Text className="font-extrabold text-slate-900 text-sm">Additional Photos *</Text>
-                <Text className="text-xs text-slate-500 mt-1">Upload more photos for your profile.</Text>
+        {/* Aadhaar Verification */}
+        <FadeInView delay={300} duration={400}>
+          <View className="mt-3">
+            <GlassCard>
+              <View className="flex-row items-center justify-between mb-4">
+                <View className="flex-row items-center gap-3">
+                  <View className="h-12 w-12 rounded-xl bg-accent-50 items-center justify-center">
+                    <Icon name="verified_user" className="text-accent text-2xl" />
+                  </View>
+                  <View>
+                    <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900 text-sm">Aadhaar Verification *</Text>
+                    <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-xs text-slate-400 mt-0.5">Upload for verification</Text>
+                  </View>
+                </View>
+                <Pressable onPress={handleAadhaarSelect} className="px-4 py-2 rounded-full bg-accent-50">
+                  <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-accent text-xs">Upload</Text>
+                </Pressable>
               </View>
-              <Pressable onPress={handleAdditionalPhotosSelect} className="px-4 py-2 rounded-xl bg-primary">
-                <Text className="text-white text-xs font-extrabold">Add Photos</Text>
-              </Pressable>
-            </View>
-            {additionalPreviews.length > 0 ? (
-              <View className="flex-row flex-wrap gap-2">
-                {additionalPreviews.map((src, idx) => (
-                  <Image key={idx} source={{ uri: src }} className="w-[30%] h-20 rounded-lg" resizeMode="cover" />
-                ))}
-              </View>
-            ) : (
-              <View className="w-full h-24 rounded-xl bg-slate-50 border border-dashed border-slate-200 items-center justify-center">
-                <Text className="text-slate-400 text-sm font-bold">No additional photos yet</Text>
-              </View>
-            )}
+              {aadhaarPreview ? (
+                <View className="w-full rounded-2xl overflow-hidden">
+                  <Image source={{ uri: aadhaarPreview }} className="w-full h-40" resizeMode="cover" />
+                </View>
+              ) : (
+                <View className="w-full h-28 rounded-2xl bg-surface-tertiary border border-dashed border-slate-200 items-center justify-center">
+                  <Icon name="upload-file" className="text-slate-300 text-2xl mb-1" />
+                  <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-400 text-xs">No Aadhaar uploaded</Text>
+                </View>
+              )}
+            </GlassCard>
           </View>
-        </View>
+        </FadeInView>
 
-        <View className="mt-8">
-          <Pressable
-            onPress={handleSubmit}
-            disabled={!isFormValid || isLoading}
-            className={`w-full py-4 rounded-2xl items-center justify-center ${isFormValid && !isLoading ? 'bg-primary' : 'bg-slate-100'
-              }`}
-          >
-            {isLoading ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <View className="flex-row items-center gap-3">
-                <Text className={`${isFormValid ? 'text-white' : 'text-slate-400'} text-lg font-extrabold`}>
-                  Start Finding Gigs
-                </Text>
-                {isFormValid && <Icon name="arrow_forward" className="text-white" />}
+        {/* Additional Photos */}
+        <FadeInView delay={350} duration={400}>
+          <View className="mt-3">
+            <GlassCard>
+              <View className="flex-row items-center justify-between mb-4">
+                <View>
+                  <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900 text-sm">Additional Photos *</Text>
+                  <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-xs text-slate-400 mt-0.5">Upload more photos for your profile</Text>
+                </View>
+                <Pressable
+                  onPress={handleAdditionalPhotosSelect}
+                  className="px-4 py-2 rounded-full bg-accent"
+                  style={{
+                    shadowColor: '#E94560',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.2,
+                    shadowRadius: 4,
+                    elevation: 2,
+                  }}
+                >
+                  <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-white text-xs">Add Photos</Text>
+                </Pressable>
               </View>
-            )}
-          </Pressable>
-        </View>
+              {additionalPreviews.length > 0 ? (
+                <View className="flex-row flex-wrap gap-2">
+                  {additionalPreviews.map((src, idx) => (
+                    <Image key={idx} source={{ uri: src }} className="w-[30%] h-20 rounded-xl" resizeMode="cover" />
+                  ))}
+                </View>
+              ) : (
+                <View className="w-full h-24 rounded-2xl bg-surface-tertiary border border-dashed border-slate-200 items-center justify-center">
+                  <Icon name="photo-library" className="text-slate-300 text-2xl mb-1" />
+                  <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-400 text-xs">No additional photos yet</Text>
+                </View>
+              )}
+            </GlassCard>
+          </View>
+        </FadeInView>
+
+        {/* Submit */}
+        <FadeInView delay={400} duration={400}>
+          <View className="mt-6">
+            <Pressable
+              onPress={handleSubmit}
+              disabled={!isFormValid || isLoading}
+              className={`w-full py-4 rounded-2xl items-center justify-center ${isFormValid && !isLoading ? 'bg-accent' : 'bg-surface-tertiary'}`}
+              style={isFormValid && !isLoading ? {
+                shadowColor: '#E94560',
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: 0.3,
+                shadowRadius: 12,
+                elevation: 6,
+              } : undefined}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <View className="flex-row items-center gap-3">
+                  <Text style={{ fontFamily: 'Inter_700Bold' }} className={`${isFormValid ? 'text-white' : 'text-slate-400'} text-lg`}>
+                    Start Finding Gigs
+                  </Text>
+                  {isFormValid && <Icon name="arrow_forward" className="text-white text-xl" />}
+                </View>
+              )}
+            </Pressable>
+          </View>
+        </FadeInView>
       </ScrollView>
     </KeyboardAvoidingView>
   );

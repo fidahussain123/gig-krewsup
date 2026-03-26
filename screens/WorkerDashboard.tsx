@@ -15,9 +15,11 @@ import { useRouter } from 'expo-router';
 import { ActivityIndicator, Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import api from '../lib/api';
 import Icon from '../components/Icon';
-import { FadeInView, ScalePress } from '../components/AnimatedComponents';
+import { FadeInView, ScalePress, ScaleInView } from '../components/AnimatedComponents';
+import { SearchBar, SectionHeader, EmptyState } from '../components/DistrictUI';
 
 const WorkerDashboard: React.FC = () => {
   const router = useRouter();
@@ -224,240 +226,370 @@ const WorkerDashboard: React.FC = () => {
     return date.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
   };
 
+  // Featured events (first 3 with images)
+  const featuredEvents = visibleEvents.filter(e => e.image_url).slice(0, 3);
+  const restEvents = visibleEvents.filter(e => !featuredEvents.includes(e));
+
   return (
-    <KeyboardAvoidingView className="flex-1 bg-slate-50" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <FadeInView delay={0} duration={500}>
-        <View className="bg-white border-b border-slate-100">
-          <View className="flex-row items-center justify-between px-4 pb-3" style={{ paddingTop: insets.top + 12 }}>
+    <KeyboardAvoidingView className="flex-1 bg-surface-secondary" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      {/* Sticky Header */}
+      <View className="bg-white" style={{ paddingTop: insets.top }}>
+        <FadeInView delay={0} duration={400}>
+          <View className="flex-row items-center justify-between px-5 pt-3 pb-2">
             <View>
-              <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-xl text-slate-900">Find Work</Text>
-              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-xs text-slate-500">{events.length} gigs</Text>
+              <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-2xl text-primary-900 tracking-tight">
+                Discover
+              </Text>
+              <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-xs text-slate-400">
+                {events.length} gigs available
+              </Text>
             </View>
-            <ScalePress
-              onPress={() => router.push('/worker/applications')}
-              className="px-3 py-2 rounded-lg bg-primary/10"
-            >
-              <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary text-xs">My Applications</Text>
-            </ScalePress>
+            <View className="flex-row items-center gap-2">
+              <ScalePress
+                onPress={() => router.push('/worker/applications')}
+                className="h-10 px-4 rounded-full bg-accent-50 flex-row items-center gap-1.5"
+              >
+                <Icon name="bookmark" className="text-accent text-base" />
+                <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-accent text-xs">Applied</Text>
+              </ScalePress>
+            </View>
           </View>
 
-          <View className="px-4 py-3">
-            <View className="relative">
-              <Icon name="search" className="text-primary text-lg absolute left-4 top-4" />
+          {/* Search Bar */}
+          <View className="px-5 pb-3">
+            <View className="h-12 flex-row items-center bg-surface-tertiary rounded-2xl px-4">
+              <Icon name="search" className="text-slate-400 text-xl mr-3" />
               <TextInput
-                placeholder="Search roles or keywords"
-                style={{ fontFamily: 'Inter_500Medium' }}
-                className="w-full h-12 pl-12 pr-4 bg-slate-100 rounded-xl text-base"
+                placeholder="Search roles, events..."
+                placeholderTextColor="#94a3b8"
+                style={{ fontFamily: 'Inter_500Medium', flex: 1, fontSize: 14 }}
+                className="text-primary-900"
               />
+              <Pressable
+                onPress={() => setFilterVisible(true)}
+                className="h-8 w-8 rounded-xl bg-accent items-center justify-center"
+              >
+                <Icon name="tune" className="text-white text-sm" />
+              </Pressable>
             </View>
           </View>
-        </View>
-      </FadeInView>
+        </FadeInView>
+      </View>
 
       <ScrollView
-        className="flex-1 px-4 py-4"
-        contentContainerStyle={{ paddingTop: 4, paddingBottom: 48 + insets.bottom + 90 }}
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: 48 + insets.bottom + 90 }}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
+        showsVerticalScrollIndicator={false}
       >
-        <View className="flex-row items-center justify-between mb-3">
-          <View className="flex-row rounded-lg bg-slate-100 p-1">
-            {(['all', 'nearby', 'saved'] as const).map((filter) => (
-              <Pressable
-                key={filter}
-                onPress={() => {
-                  setActiveFilter(filter);
-                  if (filter === 'nearby' && nearbyEvents.length === 0 && !isLoadingNearby) loadNearby();
-                }}
-                className={`px-4 py-2 rounded-md ${activeFilter === filter ? 'bg-white shadow-sm' : ''}`}
-              >
-                <Text
-                  style={{ fontFamily: 'Inter_600SemiBold' }}
-                  className={`text-sm ${activeFilter === filter ? 'text-primary' : 'text-slate-500'}`}
+        {/* Filter Tabs */}
+        <FadeInView delay={100} duration={400}>
+          <View className="px-5 pt-4 pb-2">
+            <View className="flex-row bg-surface-tertiary rounded-2xl p-1">
+              {(['all', 'nearby', 'saved'] as const).map((filter) => (
+                <Pressable
+                  key={filter}
+                  onPress={() => {
+                    setActiveFilter(filter);
+                    if (filter === 'nearby' && nearbyEvents.length === 0 && !isLoadingNearby) loadNearby();
+                  }}
+                  className={`flex-1 py-2.5 rounded-xl ${activeFilter === filter ? 'bg-white' : ''}`}
+                  style={activeFilter === filter ? {
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.06,
+                    shadowRadius: 6,
+                    elevation: 2,
+                  } : undefined}
                 >
-                  {filter === 'all' ? 'All' : filter === 'nearby' ? 'Nearby' : 'Saved'}
-                </Text>
-              </Pressable>
-            ))}
+                  <Text
+                    style={{ fontFamily: activeFilter === filter ? 'Inter_700Bold' : 'Inter_500Medium' }}
+                    className={`text-center text-sm ${activeFilter === filter ? 'text-accent' : 'text-slate-400'}`}
+                  >
+                    {filter === 'all' ? 'All Gigs' : filter === 'nearby' ? 'Near You' : 'Saved'}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
           </View>
-          <Pressable
-            onPress={() => setFilterVisible(true)}
-            className="h-10 px-4 rounded-xl bg-slate-100 flex-row items-center gap-2"
-          >
-            <Icon name="tune" className="text-slate-600" size={20} />
-            <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-700 text-sm">Filter</Text>
-          </Pressable>
-        </View>
+        </FadeInView>
+
         {activeFilter === 'nearby' && (
-          <View className="mb-3 rounded-xl bg-primary/5 border border-primary/20 px-3 py-2">
-            {locationError ? (
-              <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-xs text-red-500">{locationError}</Text>
-            ) : (
-              <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-xs text-slate-600">
-                {isLoadingNearby ? 'Finding events...' : nearbyEvents.length > 0 ? `Within ${nearbyRadiusKm} km · ${nearbyEvents.length} event${nearbyEvents.length === 1 ? '' : 's'}` : 'No events within 100 km'}
-              </Text>
-            )}
-          </View>
+          <FadeInView delay={50} duration={300}>
+            <View className="mx-5 mt-2 mb-1 rounded-2xl bg-accent-50 px-4 py-2.5">
+              {locationError ? (
+                <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-xs text-error">{locationError}</Text>
+              ) : (
+                <View className="flex-row items-center gap-2">
+                  <Icon name="near-me" className="text-accent text-sm" />
+                  <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-xs text-accent-dark">
+                    {isLoadingNearby ? 'Finding events...' : nearbyEvents.length > 0 ? `${nearbyEvents.length} event${nearbyEvents.length === 1 ? '' : 's'} within ${nearbyRadiusKm} km` : 'No events within 100 km'}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </FadeInView>
         )}
+
         {isLoading ? (
-          <View className="items-center justify-center py-12">
-            <ActivityIndicator size="large" color="#008080" />
+          <View className="items-center justify-center py-20">
+            <ActivityIndicator size="large" color="#E94560" />
           </View>
         ) : visibleEvents.length === 0 ? (
-          <View className="items-center py-12 px-4">
-            <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-center text-slate-500">
-              {activeFilter === 'nearby' && !isLoadingNearby
-                ? 'No events within 100 km. Switch to "All" to see all events.'
-                : activeFilter === 'saved'
-                ? 'No saved gigs. Tap the bookmark on any event to save.'
-                : 'No gigs available yet.'}
-            </Text>
-          </View>
+          <EmptyState
+            icon={activeFilter === 'saved' ? 'bookmark' : activeFilter === 'nearby' ? 'near-me' : 'event'}
+            title={activeFilter === 'saved' ? 'No saved gigs' : activeFilter === 'nearby' ? 'No nearby events' : 'No gigs yet'}
+            subtitle={
+              activeFilter === 'saved'
+                ? 'Tap the bookmark on any gig to save it here'
+                : activeFilter === 'nearby'
+                ? 'Switch to "All Gigs" to see all available events'
+                : 'Check back soon for new opportunities'
+            }
+          />
         ) : (
-          <View className="space-y-6">
-            {visibleEvents.map((event, index) => (
-              <FadeInView key={event.id} delay={100 + index * 80} duration={450}>
-                <View className="bg-white rounded-3xl shadow-sm ring-1 ring-slate-100 overflow-hidden">
-                  <View className="relative h-48 w-full bg-gray-200">
-                    {event.image_url ? (
-                      <Image source={{ uri: event.image_url }} resizeMode="cover" className="w-full h-full" />
-                    ) : (
-                      <View className="w-full h-full items-center justify-center">
-                        <Icon name="event" className="text-slate-300 text-5xl" />
+          <>
+            {/* Featured Carousel (horizontal scroll of top events) */}
+            {featuredEvents.length > 0 && activeFilter === 'all' && (
+              <FadeInView delay={150} duration={450}>
+                <SectionHeader title="Featured" subtitle="Top opportunities" />
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ paddingHorizontal: 20 }}
+                  className="mb-2"
+                >
+                  {featuredEvents.map((event, index) => (
+                    <ScalePress
+                      key={event.id}
+                      onPress={() => router.push(`/worker/event/${event.id}`)}
+                      className="mr-4 rounded-3xl overflow-hidden"
+                      style={{
+                        width: 300,
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 8 },
+                        shadowOpacity: 0.12,
+                        shadowRadius: 20,
+                        elevation: 6,
+                      }}
+                    >
+                      <View className="relative h-48 bg-primary-dark">
+                        <Image source={{ uri: event.image_url }} resizeMode="cover" className="w-full h-full" />
+                        <LinearGradient
+                          colors={['transparent', 'rgba(0,0,0,0.7)']}
+                          className="absolute bottom-0 left-0 right-0 h-28"
+                        />
+                        <View className="absolute top-3 right-3 bg-white/95 px-3 py-1.5 rounded-full">
+                          <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-accent text-sm">
+                            ₹{getDisplayPay(event)}
+                          </Text>
+                        </View>
+                        {event.company_name && (
+                          <View className="absolute top-3 left-3 bg-accent/90 px-2.5 py-1 rounded-full flex-row items-center gap-1">
+                            <Icon name="verified" className="text-white text-xs" />
+                            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-white text-[9px] uppercase tracking-wider">
+                              Top Organizer
+                            </Text>
+                          </View>
+                        )}
+                        <View className="absolute bottom-4 left-4 right-4">
+                          <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-white text-lg" numberOfLines={1}>
+                            {event.title}
+                          </Text>
+                          <View className="flex-row items-center gap-3 mt-1.5">
+                            <View className="flex-row items-center gap-1">
+                              <Icon name="calendar-today" className="text-white/70 text-xs" />
+                              <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-white/70 text-xs">
+                                {formatDate(event.event_date)}
+                              </Text>
+                            </View>
+                            <View className="flex-row items-center gap-1">
+                              <Icon name="location-on" className="text-white/70 text-xs" />
+                              <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-white/70 text-xs" numberOfLines={1}>
+                                {event.venue || event.location || 'TBD'}
+                              </Text>
+                            </View>
+                          </View>
+                        </View>
                       </View>
-                    )}
-                    {event.company_name && (
-                      <View className="absolute top-4 right-4 bg-white/95 px-3 py-1.5 rounded-xl flex-row items-center gap-1.5 shadow-sm">
-                        <Icon name="stars" className="text-accent text-lg" />
-                        <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[11px] text-slate-900 uppercase tracking-widest">Top Organizer</Text>
+                    </ScalePress>
+                  ))}
+                </ScrollView>
+              </FadeInView>
+            )}
+
+            {/* All Events - Card Grid */}
+            <FadeInView delay={250} duration={400}>
+              <SectionHeader
+                title={activeFilter === 'all' ? 'All Gigs' : activeFilter === 'nearby' ? 'Near You' : 'Saved'}
+                subtitle={`${(activeFilter === 'all' ? restEvents : visibleEvents).length} available`}
+              />
+            </FadeInView>
+
+            <View className="px-5 flex-row flex-wrap justify-between">
+              {(activeFilter === 'all' ? restEvents : visibleEvents).map((event, index) => (
+                <FadeInView key={event.id} delay={300 + index * 50} duration={400} style={{ width: '48.5%', marginBottom: 12 }}>
+                  <ScalePress
+                    onPress={() => router.push(`/worker/event/${event.id}`)}
+                    className="rounded-2xl bg-white overflow-hidden"
+                    style={{
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 3 },
+                      shadowOpacity: 0.06,
+                      shadowRadius: 10,
+                      elevation: 3,
+                    }}
+                  >
+                    {/* Image */}
+                    <View className="relative h-32">
+                      {event.image_url ? (
+                        <Image source={{ uri: event.image_url }} resizeMode="cover" className="w-full h-full" />
+                      ) : (
+                        <View className="w-full h-full items-center justify-center bg-primary-50">
+                          <Icon name="event" className="text-primary-200 text-3xl" />
+                        </View>
+                      )}
+                      <LinearGradient
+                        colors={['transparent', 'rgba(0,0,0,0.55)']}
+                        className="absolute bottom-0 left-0 right-0 h-16"
+                      />
+                      {/* Bookmark */}
+                      <Pressable
+                        onPress={() => toggleSave(event.id)}
+                        className="absolute top-2 right-2 h-7 w-7 rounded-full bg-white/90 items-center justify-center"
+                      >
+                        <Icon
+                          name={savedIds.has(event.id) ? 'bookmark' : 'bookmark-outline'}
+                          className={`${savedIds.has(event.id) ? 'text-accent' : 'text-slate-400'}`}
+                          size={14}
+                        />
+                      </Pressable>
+                      {/* Pay overlay */}
+                      <View className="absolute bottom-2 left-2 bg-white/95 px-2 py-1 rounded-full">
+                        <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-accent text-xs">
+                          ₹{getDisplayPay(event)}
+                        </Text>
                       </View>
-                    )}
-                  </View>
-                  <View className="p-6">
-                    <View className="flex-row justify-between items-start mb-2">
-                      <View className="bg-primary/10 px-2.5 py-1 rounded-lg">
-                        <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-primary text-[10px] uppercase tracking-widest">
+                      {/* Status badge */}
+                      <View className="absolute top-2 left-2 bg-accent/90 px-2 py-0.5 rounded-full">
+                        <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-white text-[8px] uppercase tracking-wider">
                           {event.status || 'Open'}
                         </Text>
                       </View>
-                      <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-primary text-2xl">
-                        ₹{getDisplayPay(event)}
-                      </Text>
                     </View>
-                    <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-xl text-slate-900">{event.title}</Text>
-                    {(event.company_name || event.organizer_name) && (
-                      <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-sm text-slate-500 mt-2">
-                        {event.company_name || event.organizer_name}
+
+                    {/* Content */}
+                    <View className="p-3">
+                      <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900 text-[13px] leading-tight" numberOfLines={2}>
+                        {event.title}
                       </Text>
-                    )}
-                    <View className="flex-col gap-3 mt-4">
-                      <View className="flex-row items-center gap-2">
-                        <Icon name="calendar-month" className="text-slate-500 text-lg" />
-                        <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-sm text-slate-500">{formatDate(event.event_date)}</Text>
-                      </View>
-                      <View className="flex-row items-center gap-2">
-                        <Icon name="location-on" className="text-slate-500 text-lg" />
-                        <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-sm text-slate-500">
-                          {event.venue || event.location || 'Location TBD'}
+                      {(event.company_name || event.organizer_name) && (
+                        <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-400 text-[10px] mt-1" numberOfLines={1}>
+                          {event.company_name || event.organizer_name}
                         </Text>
+                      )}
+                      <View className="mt-2 gap-1">
+                        <View className="flex-row items-center gap-1">
+                          <Icon name="calendar-today" className="text-slate-300" size={10} />
+                          <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-500 text-[10px]">
+                            {formatDate(event.event_date)}
+                          </Text>
+                        </View>
+                        <View className="flex-row items-center gap-1">
+                          <Icon name="location-on" className="text-slate-300" size={10} />
+                          <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-500 text-[10px]" numberOfLines={1}>
+                            {event.venue || event.location || 'TBD'}
+                          </Text>
+                        </View>
                       </View>
                       {activeFilter === 'nearby' && typeof event.distanceKm === 'number' && (
-                        <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-xs text-primary mt-1">
-                          {event.distanceKm.toFixed(1)} km away
-                        </Text>
+                        <View className="flex-row items-center gap-1 mt-1">
+                          <Icon name="near-me" className="text-accent" size={10} />
+                          <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-[10px] text-accent">
+                            {event.distanceKm.toFixed(1)} km
+                          </Text>
+                        </View>
                       )}
-                    </View>
-                    <View className="flex-row items-center justify-between mt-4 mb-3">
-                      <Pressable
-                        onPress={() => router.push(`/worker/event/${event.id}`)}
-                        className="flex-row items-center gap-1"
-                      >
-                        <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-xs text-primary">
-                          More details
-                        </Text>
-                        <Icon name="arrow_forward" className="text-primary text-sm" />
-                      </Pressable>
-                      {savedIds.has(event.id) && (
-                        <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-[11px] text-primary/80">
-                          Saved
-                        </Text>
-                      )}
-                    </View>
-                    <View className="mt-1">
+
+                      {/* Apply Button */}
                       <ScalePress
                         onPress={() => handleApply(event.id)}
                         disabled={applyingId === event.id}
-                        className="h-12 bg-primary items-center justify-center rounded-full"
+                        className="mt-2.5 h-9 bg-accent items-center justify-center rounded-xl"
+                        style={{
+                          shadowColor: '#E94560',
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: 0.2,
+                          shadowRadius: 4,
+                          elevation: 2,
+                        }}
                       >
-                        <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-white text-base">
-                          {applyingId === event.id ? 'Applying...' : 'Apply'}
+                        <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-white text-[11px]">
+                          {applyingId === event.id ? 'Applying...' : 'Quick Apply'}
                         </Text>
                       </ScalePress>
-                      <View className="mt-3 flex-row justify-center">
-                        <Pressable
-                          onPress={() => toggleSave(event.id)}
-                          className={`h-10 w-10 border border-slate-100 items-center justify-center rounded-full ${
-                            savedIds.has(event.id) ? 'bg-primary/10' : 'bg-white'
-                          }`}
-                        >
-                          <Icon
-                            name="bookmark"
-                            className={`${savedIds.has(event.id) ? 'text-primary' : 'text-slate-300'} text-xl`}
-                          />
-                        </Pressable>
-                      </View>
                     </View>
-                  </View>
-                </View>
-              </FadeInView>
-            ))}
-          </View>
+                  </ScalePress>
+                </FadeInView>
+              ))}
+            </View>
+          </>
         )}
       </ScrollView>
 
+      {/* Filter Modal */}
       <Modal visible={filterVisible} transparent animationType="slide">
-        <Pressable className="flex-1 justify-end bg-black/40" onPress={() => setFilterVisible(false)}>
-          <Pressable className="bg-white rounded-t-3xl pt-4 pb-8" style={{ paddingBottom: insets.bottom + 24 }} onPress={e => e.stopPropagation()}>
-            <View className="w-12 h-1 rounded-full bg-slate-200 self-center mb-4" />
-            <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-lg text-slate-900 px-4 mb-4">Filter & sort</Text>
+        <Pressable className="flex-1 justify-end bg-black/50" onPress={() => setFilterVisible(false)}>
+          <Pressable className="bg-white rounded-t-4xl pt-4 pb-8" style={{ paddingBottom: insets.bottom + 24 }} onPress={e => e.stopPropagation()}>
+            <View className="w-10 h-1 rounded-full bg-slate-200 self-center mb-5" />
+            <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-xl text-primary-900 px-6 mb-5">Filter & Sort</Text>
 
-            <View className="px-4 mb-4">
-              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-600 text-sm mb-2">Min pay (₹)</Text>
+            <View className="px-6 mb-5">
+              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-500 text-sm mb-2">Minimum pay (₹)</Text>
               <TextInput
                 value={minPay}
                 onChangeText={setMinPay}
                 placeholder="e.g. 500"
                 keyboardType="numeric"
-                className="h-12 px-4 bg-slate-100 rounded-xl text-base"
+                className="h-12 px-4 bg-surface-tertiary rounded-2xl text-base"
+                style={{ fontFamily: 'Inter_500Medium' }}
               />
             </View>
 
-            <View className="px-4 mb-6">
-              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-600 text-sm mb-2">Sort by</Text>
+            <View className="px-6 mb-6">
+              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-500 text-sm mb-2">Sort by</Text>
               <View className="gap-2">
                 {SORT_OPTIONS.map((opt) => (
                   <Pressable
                     key={opt.value}
                     onPress={() => setSortBy(opt.value)}
-                    className={`flex-row items-center justify-between py-3 px-4 rounded-xl ${sortBy === opt.value ? 'bg-primary/10 border border-primary/30' : 'bg-slate-50'}`}
+                    className={`flex-row items-center justify-between py-3.5 px-4 rounded-2xl ${sortBy === opt.value ? 'bg-accent-50 border border-accent/20' : 'bg-surface-tertiary'}`}
                   >
-                    <Text style={{ fontFamily: 'Inter_600SemiBold' }} className={sortBy === opt.value ? 'text-primary' : 'text-slate-700'}>{opt.label}</Text>
-                    {sortBy === opt.value && <Icon name="check_circle" className="text-primary" size={22} />}
+                    <Text style={{ fontFamily: 'Inter_600SemiBold' }} className={sortBy === opt.value ? 'text-accent' : 'text-slate-600'}>{opt.label}</Text>
+                    {sortBy === opt.value && <Icon name="check_circle" className="text-accent" size={20} />}
                   </Pressable>
                 ))}
               </View>
             </View>
 
-            <View className="px-4 flex-row gap-3">
+            <View className="px-6 flex-row gap-3">
               <Pressable
                 onPress={() => { setMinPay(''); setSortBy('default'); setFilterVisible(false); }}
-                className="flex-1 h-12 rounded-xl bg-slate-100 items-center justify-center"
+                className="flex-1 h-12 rounded-2xl bg-surface-tertiary items-center justify-center"
               >
-                <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-slate-600">Clear</Text>
+                <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-slate-500">Clear</Text>
               </Pressable>
               <Pressable
                 onPress={() => setFilterVisible(false)}
-                className="flex-1 h-12 rounded-xl bg-primary items-center justify-center"
+                className="flex-1 h-12 rounded-2xl bg-accent items-center justify-center"
+                style={{
+                  shadowColor: '#E94560',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 8,
+                  elevation: 4,
+                }}
               >
                 <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-white">Apply</Text>
               </Pressable>

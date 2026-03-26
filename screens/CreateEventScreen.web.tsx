@@ -168,290 +168,501 @@ const CreateEventScreen: React.FC = () => {
 
   if (success) {
     return (
-      <View className="flex-1 bg-white items-center justify-center">
+      <View className="flex-1 bg-surface-secondary items-center justify-center">
         <View className="items-center">
-          <View className="h-24 w-24 rounded-full bg-green-100 items-center justify-center mb-6">
-            <Icon name="check_circle" className="text-green-500 text-5xl" />
+          <View
+            className="h-24 w-24 rounded-full bg-success/10 items-center justify-center mb-6"
+            style={{
+              shadowColor: '#00C48C',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.2,
+              shadowRadius: 12,
+              elevation: 4,
+            }}
+          >
+            <Icon name="check_circle" className="text-success text-5xl" />
           </View>
-          <Text className="text-2xl font-extrabold text-slate-900 mb-2">Event Created!</Text>
-          <Text className="text-slate-400">₹{total.toFixed(2)} added to pending payments</Text>
+          <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-2xl text-primary-900 mb-2">Event Created!</Text>
+          <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-400">{'\u20B9'}{total.toFixed(2)} added to pending payments</Text>
         </View>
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-slate-50">
-      <View className="bg-white px-6 py-4 flex-row items-center border-b border-slate-100">
-        <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full">
-          <Icon name="arrow_back_ios_new" className="text-slate-700" />
+    <View className="flex-1 bg-surface-secondary">
+      {/* Header */}
+      <View
+        className="bg-white px-6 py-4 flex-row items-center"
+        style={{
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.04,
+          shadowRadius: 8,
+          elevation: 2,
+        }}
+      >
+        <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-surface-tertiary">
+          <Icon name="arrow_back_ios_new" className="text-primary-900" size={18} />
         </Pressable>
-        <Text className="text-lg font-extrabold text-slate-900 flex-1 text-center pr-10">Create Event</Text>
+        <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-lg text-primary-900 flex-1 text-center pr-10">Create Event</Text>
       </View>
 
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 24 }}>
         {error && (
-          <View className="mx-4 mt-4 p-4 bg-red-50 rounded-xl">
-            <Text className="text-red-600 text-sm font-medium">{error}</Text>
+          <View className="mx-5 mt-4 p-4 bg-error/10 rounded-2xl">
+            <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-error text-sm">{error}</Text>
           </View>
         )}
 
-        <View className="p-4">
-          <Pressable onPress={handleImageSelect} className="relative w-full aspect-[16/9] rounded-2xl bg-slate-100 border-2 border-dashed border-slate-200 overflow-hidden">
+        {/* Image Upload */}
+        <View className="px-5 pt-4">
+          <Pressable
+            onPress={handleImageSelect}
+            className="relative w-full aspect-[16/9] rounded-3xl bg-surface-tertiary border-2 border-dashed border-slate-200 overflow-hidden"
+          >
             {imagePreview ? (
               <Image source={{ uri: imagePreview }} className="w-full h-full" resizeMode="cover" />
             ) : (
               <View className="flex-1 items-center justify-center">
-                <Icon name="add-photo-alternate" className="text-slate-300 text-4xl mb-2" />
-                <Text className="text-sm font-bold text-slate-400">Add Event Poster</Text>
+                <View className="h-14 w-14 rounded-2xl bg-accent-50 items-center justify-center mb-3">
+                  <Icon name="add-photo-alternate" className="text-accent text-2xl" />
+                </View>
+                <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-sm text-slate-400">Add Event Poster</Text>
+                <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-xs text-slate-300 mt-1">Recommended: 16:9 ratio</Text>
               </View>
             )}
-            <View className="absolute bottom-3 right-3 bg-primary rounded-full p-2">
-              <Icon name="edit" className="text-white text-lg" />
-            </View>
+            {imagePreview && (
+              <View className="absolute bottom-3 right-3 bg-accent rounded-full p-2.5"
+                style={{
+                  shadowColor: '#E94560',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4,
+                  elevation: 3,
+                }}
+              >
+                <Icon name="edit" className="text-white text-lg" />
+              </View>
+            )}
           </Pressable>
         </View>
 
-        <View className="px-4 py-2 space-y-3">
-          <Text className="text-xs font-extrabold uppercase tracking-widest text-slate-400">Event basics</Text>
-          <TextInput
-            value={formData.title}
-            onChangeText={(value) => handleChange('title', value)}
-            className="w-full rounded-2xl border border-slate-100 bg-white h-14 px-5 text-base font-medium"
-            placeholder="Event Name *"
-          />
-          <TextInput
-            value={formData.description}
-            onChangeText={(value) => handleChange('description', value)}
-            className="w-full rounded-2xl border border-slate-100 bg-white min-h-[80px] p-4 text-base font-medium"
-            placeholder="Event Description"
-            multiline
-          />
-          <Text className="text-xs font-extrabold uppercase tracking-widest text-slate-400 mt-2">Schedule</Text>
-          <View className="flex-row gap-3">
-            <View className="flex-1">
-              <Text className="text-[11px] font-bold text-slate-400 mb-2">Start Date *</Text>
-              <input
-                type="date"
-                value={formData.startDate}
-                onChange={(e) => handleChange('startDate', e.target.value)}
-                style={{
-                  width: '100%',
-                  height: 48,
-                  borderRadius: 16,
-                  border: '1px solid #f1f5f9',
-                  backgroundColor: 'white',
-                  paddingLeft: 16,
-                  paddingRight: 16,
-                  fontSize: 14,
-                  fontWeight: 500,
-                  color: '#334155',
-                }}
-              />
-            </View>
-            <View className="flex-1">
-              <Text className="text-[11px] font-bold text-slate-400 mb-2">End Date</Text>
-              <input
-                type="date"
-                value={formData.endDate}
-                onChange={(e) => handleChange('endDate', e.target.value)}
-                min={formData.startDate}
-                style={{
-                  width: '100%',
-                  height: 48,
-                  borderRadius: 16,
-                  border: '1px solid #f1f5f9',
-                  backgroundColor: 'white',
-                  paddingLeft: 16,
-                  paddingRight: 16,
-                  fontSize: 14,
-                  fontWeight: 500,
-                  color: '#334155',
-                }}
-              />
-            </View>
-          </View>
-          <View className="flex-row gap-3">
-            <View className="flex-1">
-              <Text className="text-[11px] font-bold text-slate-400 mb-2">Start Time</Text>
-              <input
-                type="time"
-                value={formData.startTime}
-                onChange={(e) => handleChange('startTime', e.target.value)}
-                style={{
-                  width: '100%',
-                  height: 48,
-                  borderRadius: 16,
-                  border: '1px solid #f1f5f9',
-                  backgroundColor: 'white',
-                  paddingLeft: 16,
-                  paddingRight: 16,
-                  fontSize: 14,
-                  fontWeight: 500,
-                  color: '#334155',
-                }}
-              />
-            </View>
-            <View className="flex-1">
-              <Text className="text-[11px] font-bold text-slate-400 mb-2">End Time</Text>
-              <input
-                type="time"
-                value={formData.endTime}
-                onChange={(e) => handleChange('endTime', e.target.value)}
-                style={{
-                  width: '100%',
-                  height: 48,
-                  borderRadius: 16,
-                  border: '1px solid #f1f5f9',
-                  backgroundColor: 'white',
-                  paddingLeft: 16,
-                  paddingRight: 16,
-                  fontSize: 14,
-                  fontWeight: 500,
-                  color: '#334155',
-                }}
-              />
-            </View>
-          </View>
-          <Text className="text-xs font-extrabold uppercase tracking-widest text-slate-400 mt-2">Location</Text>
-          <TextInput
-            value={locationQuery}
-            onChangeText={(value) => {
-              setLocationQuery(value);
-              if (!value) {
-                handleChange('location', '');
-              }
+        {/* Event Basics */}
+        <View className="mx-5 mt-4">
+          <View
+            className="bg-white rounded-3xl p-5"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.04,
+              shadowRadius: 12,
+              elevation: 2,
             }}
-            className="w-full rounded-2xl border border-slate-100 bg-white h-14 px-5 text-base font-medium"
-            placeholder="Search location (city, area, landmark)"
-          />
-          {isSearchingLocation && (
-            <Text className="text-xs text-slate-400 px-1">Searching...</Text>
-          )}
-          {locationResults.length > 0 && (
-            <View className="rounded-2xl border border-slate-100 bg-white overflow-hidden">
-              {locationResults.map((item) => (
-                <Pressable
-                  key={`${item.place_id}`}
-                  onPress={() => handleSelectLocation(item)}
-                  className="px-4 py-3 border-b border-slate-100"
-                >
-                  <Text className="text-sm font-medium text-slate-700">{item.display_name}</Text>
-                </Pressable>
-              ))}
+          >
+            <View className="flex-row items-center gap-2 mb-4">
+              <Icon name="event-note" className="text-accent text-lg" />
+              <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900">Event Basics</Text>
             </View>
-          )}
-          <View className="rounded-2xl border border-slate-100 overflow-hidden">
-            <View className="h-[220px] items-center justify-center bg-slate-50">
-              <Text className="text-sm text-slate-500">Map is available on mobile only.</Text>
+            <View className="gap-4">
+              <View>
+                <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[11px] uppercase tracking-widest text-slate-400 mb-2">
+                  Event Name <Text className="text-accent">*</Text>
+                </Text>
+                <View className="h-14 rounded-2xl bg-surface-tertiary px-4 justify-center">
+                  <TextInput
+                    value={formData.title}
+                    onChangeText={(value) => handleChange('title', value)}
+                    placeholder="e.g. Corporate Gala Night"
+                    placeholderTextColor="#B8B8D0"
+                    style={{ fontFamily: 'Inter_500Medium' }}
+                    className="text-base text-primary-900"
+                  />
+                </View>
+              </View>
+              <View>
+                <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[11px] uppercase tracking-widest text-slate-400 mb-2">Description</Text>
+                <View className="rounded-2xl bg-surface-tertiary p-4 min-h-[80px]">
+                  <TextInput
+                    value={formData.description}
+                    onChangeText={(value) => handleChange('description', value)}
+                    placeholder="Describe your event..."
+                    placeholderTextColor="#B8B8D0"
+                    multiline
+                    style={{ fontFamily: 'Inter_500Medium' }}
+                    className="text-base text-primary-900"
+                  />
+                </View>
+              </View>
             </View>
           </View>
-          <TextInput
-            value={formData.venue}
-            onChangeText={(value) => handleChange('venue', value)}
-            className="w-full rounded-2xl border border-slate-100 bg-white h-14 px-5 text-base font-medium"
-            placeholder="Venue name / Full address"
-          />
-          <Text className="text-xs font-extrabold uppercase tracking-widest text-slate-400 mt-2">Job type</Text>
-          <View className="rounded-2xl border border-slate-100 bg-white overflow-hidden">
-            <Picker
-              selectedValue={formData.jobType}
-              onValueChange={(value) => handleChange('jobType', String(value))}
-            >
-              <Picker.Item label="Select job type" value="" />
-              {jobTypes.map((type) => (
-                <Picker.Item key={type} label={type} value={type} />
-              ))}
-            </Picker>
-          </View>
-          {formData.jobType === 'Other' && (
-            <TextInput
-              value={formData.jobTypeOther}
-              onChangeText={(value) => handleChange('jobTypeOther', value)}
-              className="w-full rounded-2xl border border-slate-100 bg-white h-12 px-4 text-sm font-medium"
-              placeholder="Enter job type"
-            />
-          )}
-          <Text className="text-xs font-extrabold uppercase tracking-widest text-slate-400 mt-2">Worker requirements</Text>
-          <View className="bg-white rounded-2xl border border-slate-100 p-4 space-y-3">
-            <Text className="text-sm font-extrabold text-slate-900">Male gig workers</Text>
-            <View className="flex-row gap-3">
-              <View className="flex-1">
-                <Text className="text-[11px] font-bold text-slate-400 mb-2">Number of male</Text>
-                <TextInput
-                  value={String(formData.maleCount)}
-                  onChangeText={(value) => handleChange('maleCount', Number(value || 0))}
-                  className="w-full rounded-2xl border border-slate-100 bg-slate-50 h-12 px-4 text-sm font-medium"
-                  placeholder="0"
-                  keyboardType="numeric"
-                />
+        </View>
+
+        {/* Schedule */}
+        <View className="mx-5 mt-3">
+          <View
+            className="bg-white rounded-3xl p-5"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.04,
+              shadowRadius: 12,
+              elevation: 2,
+            }}
+          >
+            <View className="flex-row items-center gap-2 mb-4">
+              <Icon name="schedule" className="text-accent text-lg" />
+              <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900">Schedule</Text>
+            </View>
+            <View className="gap-3">
+              <View className="flex-row gap-3">
+                <View className="flex-1">
+                  <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[11px] uppercase tracking-widest text-slate-400 mb-2">
+                    Start Date <Text className="text-accent">*</Text>
+                  </Text>
+                  <input
+                    type="date"
+                    value={formData.startDate}
+                    onChange={(e) => handleChange('startDate', e.target.value)}
+                    style={{
+                      width: '100%',
+                      height: 48,
+                      borderRadius: 16,
+                      border: 'none',
+                      backgroundColor: '#F1F3F8',
+                      paddingLeft: 16,
+                      paddingRight: 16,
+                      fontSize: 14,
+                      fontWeight: 500,
+                      color: '#1A1A2E',
+                      fontFamily: 'Inter',
+                    }}
+                  />
+                </View>
+                <View className="flex-1">
+                  <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[11px] uppercase tracking-widest text-slate-400 mb-2">End Date</Text>
+                  <input
+                    type="date"
+                    value={formData.endDate}
+                    onChange={(e) => handleChange('endDate', e.target.value)}
+                    min={formData.startDate}
+                    style={{
+                      width: '100%',
+                      height: 48,
+                      borderRadius: 16,
+                      border: 'none',
+                      backgroundColor: '#F1F3F8',
+                      paddingLeft: 16,
+                      paddingRight: 16,
+                      fontSize: 14,
+                      fontWeight: 500,
+                      color: '#1A1A2E',
+                      fontFamily: 'Inter',
+                    }}
+                  />
+                </View>
               </View>
-              <View className="flex-1">
-                <Text className="text-[11px] font-bold text-slate-400 mb-2">Pay per male</Text>
-                <TextInput
-                  value={String(formData.malePay)}
-                  onChangeText={(value) => handleChange('malePay', Number(value || 0))}
-                  className="w-full rounded-2xl border border-slate-100 bg-slate-50 h-12 px-4 text-sm font-medium"
-                  placeholder="₹0"
-                  keyboardType="numeric"
-                />
+              <View className="flex-row gap-3">
+                <View className="flex-1">
+                  <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[11px] uppercase tracking-widest text-slate-400 mb-2">Start Time</Text>
+                  <input
+                    type="time"
+                    value={formData.startTime}
+                    onChange={(e) => handleChange('startTime', e.target.value)}
+                    style={{
+                      width: '100%',
+                      height: 48,
+                      borderRadius: 16,
+                      border: 'none',
+                      backgroundColor: '#F1F3F8',
+                      paddingLeft: 16,
+                      paddingRight: 16,
+                      fontSize: 14,
+                      fontWeight: 500,
+                      color: '#1A1A2E',
+                      fontFamily: 'Inter',
+                    }}
+                  />
+                </View>
+                <View className="flex-1">
+                  <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[11px] uppercase tracking-widest text-slate-400 mb-2">End Time</Text>
+                  <input
+                    type="time"
+                    value={formData.endTime}
+                    onChange={(e) => handleChange('endTime', e.target.value)}
+                    style={{
+                      width: '100%',
+                      height: 48,
+                      borderRadius: 16,
+                      border: 'none',
+                      backgroundColor: '#F1F3F8',
+                      paddingLeft: 16,
+                      paddingRight: 16,
+                      fontSize: 14,
+                      fontWeight: 500,
+                      color: '#1A1A2E',
+                      fontFamily: 'Inter',
+                    }}
+                  />
+                </View>
               </View>
             </View>
-            <Text className="text-sm font-extrabold text-slate-900 mt-2">Female gig workers</Text>
-            <View className="flex-row gap-3">
-              <View className="flex-1">
-                <Text className="text-[11px] font-bold text-slate-400 mb-2">Number of female</Text>
+          </View>
+        </View>
+
+        {/* Location */}
+        <View className="mx-5 mt-3">
+          <View
+            className="bg-white rounded-3xl p-5"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.04,
+              shadowRadius: 12,
+              elevation: 2,
+            }}
+          >
+            <View className="flex-row items-center gap-2 mb-4">
+              <Icon name="location-on" className="text-accent text-lg" />
+              <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900">Location</Text>
+            </View>
+            <View className="gap-3">
+              <View className="h-14 rounded-2xl bg-surface-tertiary px-4 flex-row items-center">
+                <Icon name="search" className="text-slate-300 mr-2" size={18} />
                 <TextInput
-                  value={String(formData.femaleCount)}
-                  onChangeText={(value) => handleChange('femaleCount', Number(value || 0))}
-                  className="w-full rounded-2xl border border-slate-100 bg-slate-50 h-12 px-4 text-sm font-medium"
-                  placeholder="0"
-                  keyboardType="numeric"
+                  value={locationQuery}
+                  onChangeText={(value) => {
+                    setLocationQuery(value);
+                    if (!value) {
+                      handleChange('location', '');
+                    }
+                  }}
+                  placeholder="Search location (city, area, landmark)"
+                  placeholderTextColor="#B8B8D0"
+                  style={{ fontFamily: 'Inter_500Medium' }}
+                  className="flex-1 text-base text-primary-900"
                 />
               </View>
-              <View className="flex-1">
-                <Text className="text-[11px] font-bold text-slate-400 mb-2">Pay per female</Text>
+              {isSearchingLocation && (
+                <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-xs text-slate-400 px-1">Searching...</Text>
+              )}
+              {locationResults.length > 0 && (
+                <View className="rounded-2xl bg-surface-tertiary overflow-hidden">
+                  {locationResults.map((item) => (
+                    <Pressable
+                      key={`${item.place_id}`}
+                      onPress={() => handleSelectLocation(item)}
+                      className="px-4 py-3 border-b border-white/50"
+                    >
+                      <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-sm text-primary-900">{item.display_name}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              )}
+              <View className="rounded-2xl overflow-hidden">
+                <View className="h-[180px] items-center justify-center bg-surface-tertiary rounded-2xl">
+                  <Icon name="map" className="text-slate-200 text-3xl mb-2" />
+                  <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-sm text-slate-400">Map is available on mobile only</Text>
+                </View>
+              </View>
+              <View className="h-14 rounded-2xl bg-surface-tertiary px-4 justify-center">
                 <TextInput
-                  value={String(formData.femalePay)}
-                  onChangeText={(value) => handleChange('femalePay', Number(value || 0))}
-                  className="w-full rounded-2xl border border-slate-100 bg-slate-50 h-12 px-4 text-sm font-medium"
-                  placeholder="₹0"
-                  keyboardType="numeric"
+                  value={formData.venue}
+                  onChangeText={(value) => handleChange('venue', value)}
+                  placeholder="Venue name / Full address"
+                  placeholderTextColor="#B8B8D0"
+                  style={{ fontFamily: 'Inter_500Medium' }}
+                  className="text-base text-primary-900"
                 />
               </View>
             </View>
           </View>
         </View>
 
-        <View className="px-4 py-4 space-y-2">
-          <View className="flex-row justify-between">
-            <Text className="text-slate-500 font-medium">Subtotal</Text>
-            <Text className="font-bold text-slate-700">₹{subtotal.toFixed(2)}</Text>
-          </View>
-          <View className="flex-row justify-between">
-            <Text className="text-slate-500 font-medium">Platform Fee (13%)</Text>
-            <Text className="font-bold text-slate-700">₹{commission.toFixed(2)}</Text>
-          </View>
-          <View className="flex-row justify-between border-t border-slate-100 pt-2">
-            <Text className="text-lg font-extrabold text-slate-900">Total</Text>
-            <Text className="text-xl font-extrabold text-primary">₹{total.toFixed(2)}</Text>
+        {/* Job Type */}
+        <View className="mx-5 mt-3">
+          <View
+            className="bg-white rounded-3xl p-5"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.04,
+              shadowRadius: 12,
+              elevation: 2,
+            }}
+          >
+            <View className="flex-row items-center gap-2 mb-4">
+              <Icon name="category" className="text-accent text-lg" />
+              <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900">Job Type</Text>
+            </View>
+            <View className="rounded-2xl bg-surface-tertiary overflow-hidden">
+              <Picker
+                selectedValue={formData.jobType}
+                onValueChange={(value) => handleChange('jobType', String(value))}
+                style={{ fontFamily: 'Inter' }}
+              >
+                <Picker.Item label="Select job type" value="" />
+                {jobTypes.map((type) => (
+                  <Picker.Item key={type} label={type} value={type} />
+                ))}
+              </Picker>
+            </View>
+            {formData.jobType === 'Other' && (
+              <View className="h-12 rounded-2xl bg-surface-tertiary px-4 justify-center mt-3">
+                <TextInput
+                  value={formData.jobTypeOther}
+                  onChangeText={(value) => handleChange('jobTypeOther', value)}
+                  placeholder="Enter job type"
+                  placeholderTextColor="#B8B8D0"
+                  style={{ fontFamily: 'Inter_500Medium' }}
+                  className="text-sm text-primary-900"
+                />
+              </View>
+            )}
           </View>
         </View>
 
-        <View className="px-4 pb-6">
+        {/* Workers */}
+        <View className="mx-5 mt-3">
+          <View
+            className="bg-white rounded-3xl p-5"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.04,
+              shadowRadius: 12,
+              elevation: 2,
+            }}
+          >
+            <View className="flex-row items-center gap-2 mb-4">
+              <Icon name="group" className="text-accent text-lg" />
+              <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900">Worker Requirements</Text>
+            </View>
+            <View className="gap-4">
+              <View>
+                <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-sm text-primary-900 mb-3">Male Gig Workers</Text>
+                <View className="flex-row gap-3">
+                  <View className="flex-1">
+                    <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[11px] uppercase tracking-widest text-slate-400 mb-2">Count</Text>
+                    <View className="h-12 rounded-2xl bg-surface-tertiary px-4 justify-center">
+                      <TextInput
+                        value={String(formData.maleCount)}
+                        onChangeText={(value) => handleChange('maleCount', Number(value || 0))}
+                        placeholder="0"
+                        placeholderTextColor="#B8B8D0"
+                        keyboardType="numeric"
+                        style={{ fontFamily: 'Inter_500Medium' }}
+                        className="text-sm text-primary-900"
+                      />
+                    </View>
+                  </View>
+                  <View className="flex-1">
+                    <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[11px] uppercase tracking-widest text-slate-400 mb-2">Pay Each</Text>
+                    <View className="h-12 rounded-2xl bg-surface-tertiary px-4 justify-center">
+                      <TextInput
+                        value={String(formData.malePay)}
+                        onChangeText={(value) => handleChange('malePay', Number(value || 0))}
+                        placeholder={'\u20B90'}
+                        placeholderTextColor="#B8B8D0"
+                        keyboardType="numeric"
+                        style={{ fontFamily: 'Inter_500Medium' }}
+                        className="text-sm text-primary-900"
+                      />
+                    </View>
+                  </View>
+                </View>
+              </View>
+              <View>
+                <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-sm text-primary-900 mb-3">Female Gig Workers</Text>
+                <View className="flex-row gap-3">
+                  <View className="flex-1">
+                    <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[11px] uppercase tracking-widest text-slate-400 mb-2">Count</Text>
+                    <View className="h-12 rounded-2xl bg-surface-tertiary px-4 justify-center">
+                      <TextInput
+                        value={String(formData.femaleCount)}
+                        onChangeText={(value) => handleChange('femaleCount', Number(value || 0))}
+                        placeholder="0"
+                        placeholderTextColor="#B8B8D0"
+                        keyboardType="numeric"
+                        style={{ fontFamily: 'Inter_500Medium' }}
+                        className="text-sm text-primary-900"
+                      />
+                    </View>
+                  </View>
+                  <View className="flex-1">
+                    <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[11px] uppercase tracking-widest text-slate-400 mb-2">Pay Each</Text>
+                    <View className="h-12 rounded-2xl bg-surface-tertiary px-4 justify-center">
+                      <TextInput
+                        value={String(formData.femalePay)}
+                        onChangeText={(value) => handleChange('femalePay', Number(value || 0))}
+                        placeholder={'\u20B90'}
+                        placeholderTextColor="#B8B8D0"
+                        keyboardType="numeric"
+                        style={{ fontFamily: 'Inter_500Medium' }}
+                        className="text-sm text-primary-900"
+                      />
+                    </View>
+                  </View>
+                </View>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Total */}
+        <View className="mx-5 mt-3">
+          <View
+            className="bg-white rounded-3xl p-5"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.04,
+              shadowRadius: 12,
+              elevation: 2,
+            }}
+          >
+            <View className="flex-row items-center gap-2 mb-4">
+              <Icon name="payments" className="text-accent text-lg" />
+              <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900">Cost Summary</Text>
+            </View>
+            <View className="gap-3">
+              <View className="flex-row justify-between">
+                <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-400">Subtotal</Text>
+                <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900">{'\u20B9'}{subtotal.toFixed(2)}</Text>
+              </View>
+              <View className="flex-row justify-between">
+                <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-400">Platform Fee (13%)</Text>
+                <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900">{'\u20B9'}{commission.toFixed(2)}</Text>
+              </View>
+              <View className="h-px bg-surface-tertiary" />
+              <View className="flex-row justify-between">
+                <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-lg text-primary-900">Total</Text>
+                <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-xl text-accent">{'\u20B9'}{total.toFixed(2)}</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Submit */}
+        <View className="px-5 py-6">
           <Pressable
             onPress={handleSubmit}
             disabled={!isFormValid || isLoading}
-            className={`w-full py-4 rounded-2xl items-center justify-center ${
-              isFormValid && !isLoading ? 'bg-primary' : 'bg-slate-100'
-            }`}
+            className={`w-full py-4 rounded-2xl items-center justify-center ${isFormValid && !isLoading ? 'bg-accent' : 'bg-surface-tertiary'}`}
+            style={isFormValid && !isLoading ? {
+              shadowColor: '#E94560',
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.3,
+              shadowRadius: 12,
+              elevation: 6,
+            } : undefined}
           >
             {isLoading ? (
               <ActivityIndicator color="#ffffff" />
             ) : (
               <View className="flex-row items-center gap-2">
-                <Text className={`${isFormValid ? 'text-white' : 'text-slate-400'} text-lg font-extrabold`}>Create Event</Text>
-                {isFormValid && <Icon name="event" className="text-white" />}
+                <Icon name="check" className={isFormValid ? 'text-white' : 'text-slate-400'} size={20} />
+                <Text style={{ fontFamily: 'Inter_700Bold' }} className={`${isFormValid ? 'text-white' : 'text-slate-400'} text-lg`}>Create Event</Text>
               </View>
             )}
           </Pressable>

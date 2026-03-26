@@ -242,29 +242,41 @@ const EventGroupChatScreen: React.FC = () => {
 
   return (
     <KeyboardAvoidingView
-      className="flex-1 bg-slate-50"
+      className="flex-1 bg-surface-secondary"
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
-      <View className="bg-white border-b border-slate-100 px-4 pb-3 flex-row items-center gap-3" style={{ paddingTop: insets.top + 20 }}>
-        <Pressable onPress={() => router.back()} className="h-10 w-10 rounded-full bg-slate-100 items-center justify-center">
-          <Icon name="arrow_back_ios_new" className="text-slate-600" />
+      {/* Header */}
+      <View
+        className="bg-white px-4 pb-3 flex-row items-center gap-3"
+        style={{
+          paddingTop: insets.top + 12,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.04,
+          shadowRadius: 8,
+          elevation: 2,
+        }}
+      >
+        <Pressable onPress={() => router.back()} className="h-10 w-10 rounded-full bg-surface-tertiary items-center justify-center">
+          <Icon name="arrow_back_ios_new" className="text-primary-900" size={18} />
         </Pressable>
         <View className="flex-1">
-          <Text className="font-bold text-slate-900 text-base">{conversationTitle}</Text>
-          <Text className="text-xs text-slate-400">{participants.length} members</Text>
+          <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900 text-base">{conversationTitle}</Text>
+          <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-xs text-slate-400">{participants.length} members</Text>
         </View>
         <Pressable
           onPress={() => setIsCallModalOpen(true)}
-          className="h-10 w-10 rounded-full bg-slate-100 items-center justify-center"
+          className="h-10 w-10 rounded-full bg-accent-50 items-center justify-center"
         >
-          <Icon name="call" className="text-slate-600" />
+          <Icon name="call" className="text-accent" size={18} />
         </Pressable>
       </View>
 
+      {/* Messages */}
       <ScrollView
         ref={scrollRef}
-        className="flex-1 px-3 py-3"
+        className="flex-1 px-4 py-3"
         contentContainerStyle={{ paddingTop: 6, paddingBottom: 20 + insets.bottom }}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
@@ -272,24 +284,26 @@ const EventGroupChatScreen: React.FC = () => {
       >
         {isLoading ? (
           <View className="items-center justify-center h-32">
-            <ActivityIndicator size="large" color="#008080" />
+            <ActivityIndicator size="large" color="#E94560" />
           </View>
         ) : messages.length === 0 ? (
-          <View className="items-center py-12">
-            <View className="h-16 w-16 rounded-full bg-slate-100 items-center justify-center mb-4">
-              <Icon name="chat-bubble" className="text-slate-300 text-3xl" />
+          <View className="items-center py-16">
+            <View className="h-20 w-20 rounded-3xl bg-accent-50 items-center justify-center mb-4">
+              <Icon name="chat-bubble" className="text-accent text-3xl" />
             </View>
-            <Text className="font-bold text-slate-700 mb-1">No messages yet</Text>
-            <Text className="text-sm text-slate-400">Start the conversation!</Text>
+            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900 mb-1">No messages yet</Text>
+            <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-sm text-slate-400">Start the conversation!</Text>
           </View>
         ) : (
           <>
             {groupedMessages.map((group, idx) => (
               <View key={idx}>
                 <View className="items-center my-4">
-                  <Text className="px-3 py-1 rounded-full bg-slate-100 text-xs font-medium text-slate-500">
-                    {group.date}
-                  </Text>
+                  <View className="px-4 py-1.5 rounded-full bg-surface-tertiary">
+                    <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-xs text-slate-400">
+                      {group.date}
+                    </Text>
+                  </View>
                 </View>
 
                 {group.messages.map((msg) => {
@@ -299,9 +313,11 @@ const EventGroupChatScreen: React.FC = () => {
                   if (isSystem) {
                     return (
                       <View key={msg.id} className="items-center my-2">
-                        <Text className="px-4 py-1.5 rounded-full bg-slate-100 text-xs text-slate-500">
-                          {msg.content}
-                        </Text>
+                        <View className="px-4 py-1.5 rounded-full bg-surface-tertiary">
+                          <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-xs text-slate-400">
+                            {msg.content}
+                          </Text>
+                        </View>
                       </View>
                     );
                   }
@@ -309,22 +325,31 @@ const EventGroupChatScreen: React.FC = () => {
                   return (
                     <View key={msg.id} className={`flex-row mb-3 ${isOwn ? 'justify-end' : 'justify-start'}`}>
                       {!isOwn && (
-                        <View className="h-8 w-8 rounded-full bg-primary/10 items-center justify-center mr-2">
+                        <View className="h-8 w-8 rounded-full bg-accent-50 items-center justify-center mr-2">
                           {msg.senderAvatar ? (
                             <Image source={{ uri: msg.senderAvatar }} className="w-full h-full rounded-full" resizeMode="cover" />
                           ) : (
-                            <Text className="text-xs font-bold text-primary">{msg.senderName?.[0] || '?'}</Text>
+                            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-xs text-accent">{msg.senderName?.[0] || '?'}</Text>
                           )}
                         </View>
                       )}
                       <View className={`max-w-[75%] ${isOwn ? 'items-end' : ''}`}>
                         {!isOwn && (
-                          <Text className="text-xs font-medium text-slate-500 mb-1">{msg.senderName}</Text>
+                          <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-[10px] text-slate-400 mb-1">{msg.senderName}</Text>
                         )}
-                        <View className={`px-4 py-2.5 rounded-2xl ${isOwn ? 'bg-primary' : 'bg-white border border-slate-100'}`}>
-                          <Text className={`text-sm ${isOwn ? 'text-white' : 'text-slate-800'}`}>{msg.content}</Text>
+                        <View
+                          className={`px-4 py-2.5 ${isOwn ? 'bg-accent rounded-2xl rounded-br-md' : 'bg-white rounded-2xl rounded-bl-md'}`}
+                          style={!isOwn ? {
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 1 },
+                            shadowOpacity: 0.04,
+                            shadowRadius: 4,
+                            elevation: 1,
+                          } : undefined}
+                        >
+                          <Text style={{ fontFamily: 'Inter_500Medium' }} className={`text-sm ${isOwn ? 'text-white' : 'text-primary-900'}`}>{msg.content}</Text>
                         </View>
-                        <Text className={`text-[10px] text-slate-400 mt-1 ${isOwn ? 'text-right' : ''}`}>
+                        <Text style={{ fontFamily: 'Inter_500Medium' }} className={`text-[10px] text-slate-300 mt-1 ${isOwn ? 'text-right' : ''}`}>
                           {formatTime(msg.createdAt)}
                         </Text>
                       </View>
@@ -335,67 +360,112 @@ const EventGroupChatScreen: React.FC = () => {
             ))}
 
             {typingUsers.size > 0 && (
-              <View className="flex-row items-center gap-2 text-xs text-slate-400 ml-10">
-                <Text>Someone is typing...</Text>
+              <View className="flex-row items-center gap-2 ml-10 mt-1">
+                <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-xs text-slate-400">Someone is typing...</Text>
               </View>
             )}
           </>
         )}
       </ScrollView>
 
-      <View className="bg-white border-t border-slate-100 p-4">
+      {/* Input Bar */}
+      <View
+        className="bg-white px-4 py-3"
+        style={{
+          paddingBottom: insets.bottom + 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.04,
+          shadowRadius: 8,
+          elevation: 4,
+        }}
+      >
         <View className="flex-row items-center gap-3">
-          <TextInput
-            value={newMessage}
-            onChangeText={handleInputChange}
-            placeholder="Type a message..."
-            className="flex-1 h-12 px-4 rounded-xl bg-slate-100 text-sm"
-          />
+          <View className="flex-1 h-12 rounded-2xl bg-surface-tertiary px-4 flex-row items-center">
+            <TextInput
+              value={newMessage}
+              onChangeText={handleInputChange}
+              placeholder="Type a message..."
+              placeholderTextColor="#B8B8D0"
+              style={{ fontFamily: 'Inter_500Medium' }}
+              className="flex-1 text-sm text-primary-900"
+            />
+          </View>
           <Pressable
             onPress={handleSendMessage}
             disabled={!newMessage.trim()}
-            className="h-12 w-12 rounded-xl bg-primary items-center justify-center"
+            className={`h-12 w-12 rounded-2xl items-center justify-center ${newMessage.trim() ? 'bg-accent' : 'bg-surface-tertiary'}`}
+            style={newMessage.trim() ? {
+              shadowColor: '#E94560',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 4,
+            } : undefined}
           >
-            <Icon name="send" className="text-white" />
+            <Icon name="send" className={newMessage.trim() ? 'text-white' : 'text-slate-300'} size={20} />
           </Pressable>
         </View>
       </View>
 
+      {/* Call Modal */}
       <Modal visible={isCallModalOpen} transparent animationType="fade" onRequestClose={() => setIsCallModalOpen(false)}>
-        <View className="flex-1 items-center justify-center bg-black/50 px-6">
-          <View className="w-full rounded-2xl bg-white p-5">
-            <Text className="text-base font-extrabold text-slate-900">Start voice call</Text>
-            <Text className="text-xs text-slate-400 mt-1">Choose a member to call</Text>
-            <ScrollView className="mt-4 max-h-60">
+        <View className="flex-1 items-center justify-end bg-black/50">
+          <View
+            className="w-full rounded-t-4xl bg-white p-6"
+            style={{
+              paddingBottom: insets.bottom + 16,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: -4 },
+              shadowOpacity: 0.1,
+              shadowRadius: 16,
+              elevation: 10,
+            }}
+          >
+            <View className="w-10 h-1 rounded-full bg-slate-200 self-center mb-5" />
+            <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-lg text-primary-900">Start Voice Call</Text>
+            <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-xs text-slate-400 mt-1 mb-4">Choose a member to call</Text>
+            <ScrollView className="max-h-60">
               {participants
                 .filter(p => p.user_id !== user?.id)
                 .map((p) => (
                   <Pressable
                     key={p.user_id}
                     onPress={() => handleStartDirectCall(p.user_id)}
-                    className="flex-row items-center gap-3 py-3 border-b border-slate-100"
+                    className="flex-row items-center gap-3 py-3 border-b border-surface-tertiary"
                   >
-                    <View className="h-9 w-9 rounded-full bg-slate-100 items-center justify-center overflow-hidden">
+                    <View className="h-10 w-10 rounded-full bg-accent-50 items-center justify-center overflow-hidden">
                       {p.avatar_url ? (
                         <Image source={{ uri: p.avatar_url }} className="w-full h-full" resizeMode="cover" />
                       ) : (
-                        <Text className="text-xs font-bold text-slate-600">{p.name?.[0] || '?'}</Text>
+                        <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-xs text-accent">{p.name?.[0] || '?'}</Text>
                       )}
                     </View>
-                    <Text className="text-sm font-semibold text-slate-700">{p.name || 'Member'}</Text>
+                    <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-sm text-primary-900 flex-1">{p.name || 'Member'}</Text>
+                    <View className="h-8 w-8 rounded-full bg-success/10 items-center justify-center">
+                      <Icon name="call" className="text-success" size={14} />
+                    </View>
                   </Pressable>
                 ))}
             </ScrollView>
             {role === 'organizer' && participants.length > 1 && (
               <Pressable
                 onPress={handleStartGroupCall}
-                className="mt-4 h-12 rounded-xl bg-primary items-center justify-center"
+                className="mt-4 h-12 rounded-2xl bg-accent items-center justify-center flex-row gap-2"
+                style={{
+                  shadowColor: '#E94560',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 8,
+                  elevation: 4,
+                }}
               >
-                <Text className="text-white font-bold text-sm">Start group call</Text>
+                <Icon name="group" className="text-white" size={18} />
+                <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-white text-sm">Start Group Call</Text>
               </Pressable>
             )}
-            <Pressable onPress={() => setIsCallModalOpen(false)} className="mt-3 h-11 rounded-xl bg-slate-100 items-center justify-center">
-              <Text className="text-slate-600 font-bold text-sm">Cancel</Text>
+            <Pressable onPress={() => setIsCallModalOpen(false)} className="mt-3 h-12 rounded-2xl bg-surface-tertiary items-center justify-center">
+              <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-slate-500 text-sm">Cancel</Text>
             </Pressable>
           </View>
         </View>

@@ -10,10 +10,11 @@ import api from '../lib/api';
 import { uploadFile, UploadAsset } from '../lib/storage';
 import Icon from '../components/Icon';
 import { ScalePress } from '../components/AnimatedComponents';
+import { GlassCard } from '../components/DistrictUI';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_PADDING = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05));
-const SECTION_GAP = 20;
+const SECTION_GAP = 16;
 
 const CreateEventScreen: React.FC = () => {
   const router = useRouter();
@@ -25,7 +26,6 @@ const CreateEventScreen: React.FC = () => {
     right: rawInsets?.right ?? 0,
   };
   const [isLoading, setIsLoading] = useState(false);
-  // On Android, do not mount MapView to avoid native crash on open; use placeholder only
   const useMapOnAndroid = false;
   const [mapReady, setMapReady] = useState(Platform.OS !== 'android');
   const [error, setError] = useState('');
@@ -262,25 +262,26 @@ const CreateEventScreen: React.FC = () => {
 
   if (success) {
     return (
-      <View className="flex-1 bg-slate-50 items-center justify-center px-8">
+      <View className="flex-1 bg-white items-center justify-center px-8">
         <View className="items-center">
-          <View className="h-20 w-20 rounded-full bg-emerald-100 items-center justify-center mb-5">
-            <Icon name="check_circle" className="text-emerald-500 text-5xl" />
+          <View className="h-20 w-20 rounded-3xl bg-success/10 items-center justify-center mb-5">
+            <Icon name="check_circle" className="text-success text-5xl" />
           </View>
-          <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-xl text-slate-900 mb-2 text-center">Event created</Text>
-          <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-500 text-sm text-center">₹{total.toFixed(2)} added to pending payments</Text>
+          <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-xl text-primary-900 mb-2 text-center">Event Created!</Text>
+          <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-400 text-sm text-center">₹{total.toFixed(2)} added to pending payments</Text>
         </View>
       </View>
     );
   }
 
   return (
-    <KeyboardAvoidingView className="flex-1 bg-slate-100" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View className="bg-white flex-row items-center border-b border-slate-200/80" style={{ paddingTop: insets.top + 12, paddingBottom: 14, paddingHorizontal: CARD_PADDING }}>
-        <ScalePress onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-slate-100">
-          <Icon name="arrow_back_ios_new" className="text-slate-600 text-lg" />
+    <KeyboardAvoidingView className="flex-1 bg-surface-secondary" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      {/* Header */}
+      <View className="bg-white flex-row items-center" style={{ paddingTop: insets.top + 8, paddingBottom: 14, paddingHorizontal: CARD_PADDING }}>
+        <ScalePress onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-surface-tertiary">
+          <Icon name="arrow_back_ios_new" className="text-primary-900 text-base" />
         </ScalePress>
-        <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-base text-slate-900 flex-1 text-center">
+        <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-base text-primary-900 flex-1 text-center">
           Create Event
         </Text>
         <View style={{ width: 40 }} />
@@ -294,97 +295,101 @@ const CreateEventScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
       >
         {error && (
-          <View className="mb-4 p-4 bg-red-50 rounded-xl border border-red-100">
-            <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-red-600 text-sm">{error}</Text>
+          <View className="mb-4 p-4 bg-error/10 rounded-2xl">
+            <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-error text-sm">{error}</Text>
           </View>
         )}
 
         {/* Event poster */}
         <ScalePress onPress={handleImageSelect} className="mb-5">
-          <View className="rounded-2xl overflow-hidden bg-white border border-slate-200 shadow-sm" style={{ shadowOpacity: 0.06, elevation: 2 }}>
-            <View className="w-full aspect-[16/9] bg-slate-100">
+          <View className="rounded-3xl overflow-hidden bg-white" style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.06,
+            shadowRadius: 12,
+            elevation: 3,
+          }}>
+            <View className="w-full aspect-[16/9] bg-surface-tertiary">
               {imagePreview ? (
                 <Image source={{ uri: imagePreview }} className="w-full h-full" resizeMode="cover" />
               ) : (
                 <View className="flex-1 items-center justify-center p-6">
-                  <View className="h-14 w-14 rounded-full bg-primary/10 items-center justify-center mb-3">
-                    <Icon name="add-photo-alternate" className="text-primary text-3xl" />
+                  <View className="h-14 w-14 rounded-2xl bg-accent-50 items-center justify-center mb-3">
+                    <Icon name="add-photo-alternate" className="text-accent text-3xl" />
                   </View>
-                  <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-slate-600 text-sm">Add event poster</Text>
+                  <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900 text-sm">Add event poster</Text>
                   <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-400 text-xs mt-1">Tap to upload image</Text>
                 </View>
               )}
             </View>
             {imagePreview && (
-              <View className="absolute bottom-3 right-3 rounded-full bg-primary p-2.5">
+              <View className="absolute bottom-3 right-3 rounded-full bg-accent p-2.5">
                 <Icon name="edit" className="text-white text-base" />
               </View>
             )}
           </View>
         </ScalePress>
 
-        {/* Event basics card */}
-        <View className="bg-white rounded-2xl p-4 mb-5 border border-slate-200/80 shadow-sm" style={{ shadowOpacity: 0.04, elevation: 2 }}>
+        {/* Event basics */}
+        <GlassCard className="mb-4">
           <View className="flex-row items-center gap-2 mb-4">
-            <Icon name="description" className="text-primary text-xl" />
-            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-slate-800 text-sm">Event basics</Text>
+            <Icon name="description" className="text-accent text-lg" />
+            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900 text-sm">Event Basics</Text>
           </View>
           <TextInput
             value={formData.title}
             onChangeText={(v) => handleChange('title', v)}
             placeholder="Event name *"
-            placeholderTextColor="#94a3b8"
-            className="rounded-xl border border-slate-200 bg-slate-50 h-12 px-4 text-slate-900 text-base mb-3"
+            placeholderTextColor="#B8B8D0"
+            className="rounded-2xl bg-surface-tertiary h-12 px-4 text-primary-900 text-base mb-3"
             style={{ fontFamily: 'Inter_500Medium' }}
           />
           <TextInput
             value={formData.description}
             onChangeText={(v) => handleChange('description', v)}
             placeholder="Description (optional)"
-            placeholderTextColor="#94a3b8"
+            placeholderTextColor="#B8B8D0"
             multiline
-            className="rounded-xl border border-slate-200 bg-slate-50 min-h-[88px] p-4 text-slate-900 text-base"
+            className="rounded-2xl bg-surface-tertiary min-h-[88px] p-4 text-primary-900 text-base"
             style={{ fontFamily: 'Inter_500Medium', textAlignVertical: 'top' }}
           />
-        </View>
+        </GlassCard>
 
-        {/* Schedule card — date & time side by side */}
-        <View className="bg-white rounded-2xl p-4 mb-5 border border-slate-200/80 shadow-sm" style={{ shadowOpacity: 0.04, elevation: 2 }}>
+        {/* Schedule */}
+        <GlassCard className="mb-4">
           <View className="flex-row items-center gap-2 mb-4">
-            <Icon name="schedule" className="text-primary text-xl" />
-            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-slate-800 text-sm">Schedule</Text>
+            <Icon name="schedule" className="text-accent text-lg" />
+            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900 text-sm">Schedule</Text>
           </View>
-          {/* Date row */}
           <View className="flex-row gap-3 mb-3">
-            <ScalePress onPress={() => setShowStartDatePicker(true)} className="flex-1 rounded-xl border border-slate-200 bg-slate-50 h-14 px-4 justify-center">
+            <ScalePress onPress={() => setShowStartDatePicker(true)} className="flex-1 rounded-2xl bg-surface-tertiary h-14 px-4 justify-center">
               <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-[10px] text-slate-400 uppercase tracking-wide">Start date</Text>
-              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-800 text-sm mt-0.5" numberOfLines={1}>
+              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-primary-900 text-sm mt-0.5" numberOfLines={1}>
                 {startDateValue ? formatDateLabel(startDateValue) : 'Select'}
               </Text>
             </ScalePress>
-            <ScalePress onPress={() => setShowEndDatePicker(true)} className="flex-1 rounded-xl border border-slate-200 bg-slate-50 h-14 px-4 justify-center">
+            <ScalePress onPress={() => setShowEndDatePicker(true)} className="flex-1 rounded-2xl bg-surface-tertiary h-14 px-4 justify-center">
               <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-[10px] text-slate-400 uppercase tracking-wide">End date</Text>
-              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-800 text-sm mt-0.5" numberOfLines={1}>
+              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-primary-900 text-sm mt-0.5" numberOfLines={1}>
                 {endDateValue ? formatDateLabel(endDateValue) : 'Optional'}
               </Text>
             </ScalePress>
           </View>
-          {/* Time row — side by side */}
           <View className="flex-row gap-3">
-            <ScalePress onPress={() => setShowStartTimePicker(true)} className="flex-1 rounded-xl border border-slate-200 bg-slate-50 h-14 px-4 justify-center">
+            <ScalePress onPress={() => setShowStartTimePicker(true)} className="flex-1 rounded-2xl bg-surface-tertiary h-14 px-4 justify-center">
               <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-[10px] text-slate-400 uppercase tracking-wide">Start time</Text>
-              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-800 text-sm mt-0.5">
+              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-primary-900 text-sm mt-0.5">
                 {formData.startTime || 'Select'}
               </Text>
             </ScalePress>
-            <ScalePress onPress={() => setShowEndTimePicker(true)} className="flex-1 rounded-xl border border-slate-200 bg-slate-50 h-14 px-4 justify-center">
+            <ScalePress onPress={() => setShowEndTimePicker(true)} className="flex-1 rounded-2xl bg-surface-tertiary h-14 px-4 justify-center">
               <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-[10px] text-slate-400 uppercase tracking-wide">End time</Text>
-              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-800 text-sm mt-0.5">
+              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-primary-900 text-sm mt-0.5">
                 {formData.endTime || 'Optional'}
               </Text>
             </ScalePress>
           </View>
-        </View>
+        </GlassCard>
 
         {showStartDatePicker && (
           <DateTimePicker
@@ -449,11 +454,11 @@ const CreateEventScreen: React.FC = () => {
           />
         )}
 
-        {/* Location card */}
-        <View className="bg-white rounded-2xl p-4 mb-5 border border-slate-200/80 shadow-sm" style={{ shadowOpacity: 0.04, elevation: 2 }}>
+        {/* Location */}
+        <GlassCard className="mb-4">
           <View className="flex-row items-center gap-2 mb-4">
-            <Icon name="location-on" className="text-primary text-xl" />
-            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-slate-800 text-sm">Location</Text>
+            <Icon name="location-on" className="text-accent text-lg" />
+            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900 text-sm">Location</Text>
           </View>
           <TextInput
             value={locationQuery}
@@ -462,28 +467,28 @@ const CreateEventScreen: React.FC = () => {
               if (!v) handleChange('location', '');
             }}
             placeholder="Search city, area or landmark"
-            placeholderTextColor="#94a3b8"
-            className="rounded-xl border border-slate-200 bg-slate-50 h-12 px-4 text-slate-900 text-base mb-3"
+            placeholderTextColor="#B8B8D0"
+            className="rounded-2xl bg-surface-tertiary h-12 px-4 text-primary-900 text-base mb-3"
             style={{ fontFamily: 'Inter_500Medium' }}
           />
           {isSearchingLocation && (
             <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-400 text-xs mb-2">Searching...</Text>
           )}
           {locationResults.length > 0 && (
-            <View className="rounded-xl border border-slate-200 overflow-hidden mb-3">
+            <View className="rounded-2xl overflow-hidden mb-3 bg-white border border-surface-tertiary">
               {locationResults.map((item) => (
-                <ScalePress key={`${item.place_id}`} onPress={() => handleSelectLocation(item)} className="px-4 py-3 border-b border-slate-100 bg-white">
-                  <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-700 text-sm" numberOfLines={2}>{item.display_name}</Text>
+                <ScalePress key={`${item.place_id}`} onPress={() => handleSelectLocation(item)} className="px-4 py-3 border-b border-surface-tertiary">
+                  <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-primary-900 text-sm" numberOfLines={2}>{item.display_name}</Text>
                 </ScalePress>
               ))}
             </View>
           )}
-          <View className="rounded-xl overflow-hidden border border-slate-200" style={{ height: 200 }}>
+          <View className="rounded-2xl overflow-hidden" style={{ height: 200 }}>
             {Platform.OS === 'android' && !useMapOnAndroid ? (
-              <View className="flex-1 bg-slate-100 items-center justify-center" style={{ height: 200 }}>
-                <Icon name="location_on" className="text-slate-400 text-3xl mb-2" />
-                <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-500 text-sm text-center px-4">
-                  Use search above to set location. Map not shown on this device.
+              <View className="flex-1 bg-surface-tertiary items-center justify-center" style={{ height: 200 }}>
+                <Icon name="location-on" className="text-slate-300 text-3xl mb-2" />
+                <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-400 text-sm text-center px-4">
+                  Use search above to set location.
                 </Text>
               </View>
             ) : mapReady ? (
@@ -496,8 +501,8 @@ const CreateEventScreen: React.FC = () => {
                 {selectedCoords && <Marker coordinate={selectedCoords} />}
               </MapView>
             ) : (
-              <View className="flex-1 bg-slate-100 items-center justify-center" style={{ height: 200 }}>
-                <ActivityIndicator size="small" color="#008080" />
+              <View className="flex-1 bg-surface-tertiary items-center justify-center" style={{ height: 200 }}>
+                <ActivityIndicator size="small" color="#E94560" />
               </View>
             )}
           </View>
@@ -505,19 +510,19 @@ const CreateEventScreen: React.FC = () => {
             value={formData.venue}
             onChangeText={(v) => handleChange('venue', v)}
             placeholder="Venue name / full address"
-            placeholderTextColor="#94a3b8"
-            className="rounded-xl border border-slate-200 bg-slate-50 h-12 px-4 text-slate-900 text-base mt-3"
+            placeholderTextColor="#B8B8D0"
+            className="rounded-2xl bg-surface-tertiary h-12 px-4 text-primary-900 text-base mt-3"
             style={{ fontFamily: 'Inter_500Medium' }}
           />
-        </View>
+        </GlassCard>
 
-        {/* Job type card */}
-        <View className="bg-white rounded-2xl p-4 mb-5 border border-slate-200/80 shadow-sm" style={{ shadowOpacity: 0.04, elevation: 2 }}>
+        {/* Job type */}
+        <GlassCard className="mb-4">
           <View className="flex-row items-center gap-2 mb-3">
-            <Icon name="work" className="text-primary text-xl" />
-            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-slate-800 text-sm">Job type</Text>
+            <Icon name="work" className="text-accent text-lg" />
+            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900 text-sm">Job Type</Text>
           </View>
-          <View className="rounded-xl border border-slate-200 bg-slate-50 overflow-hidden">
+          <View className="rounded-2xl bg-surface-tertiary overflow-hidden">
             <Picker
               selectedValue={formData.jobType}
               onValueChange={(v) => handleChange('jobType', String(v))}
@@ -534,101 +539,105 @@ const CreateEventScreen: React.FC = () => {
               value={formData.jobTypeOther}
               onChangeText={(v) => handleChange('jobTypeOther', v)}
               placeholder="Specify job type"
-              placeholderTextColor="#94a3b8"
-              className="rounded-xl border border-slate-200 bg-slate-50 h-12 px-4 text-slate-900 text-sm mt-3"
+              placeholderTextColor="#B8B8D0"
+              className="rounded-2xl bg-surface-tertiary h-12 px-4 text-primary-900 text-sm mt-3"
               style={{ fontFamily: 'Inter_500Medium' }}
             />
           )}
-        </View>
+        </GlassCard>
 
-        {/* Worker requirements card */}
-        <View className="bg-white rounded-2xl p-4 mb-5 border border-slate-200/80 shadow-sm" style={{ shadowOpacity: 0.04, elevation: 2 }}>
+        {/* Worker requirements */}
+        <GlassCard className="mb-4">
           <View className="flex-row items-center gap-2 mb-4">
-            <Icon name="groups" className="text-primary text-xl" />
-            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-slate-800 text-sm">Worker requirements</Text>
+            <Icon name="groups" className="text-accent text-lg" />
+            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900 text-sm">Workers</Text>
           </View>
-          <View className="flex-row gap-3 mb-4">
+          <View className="flex-row gap-3 mb-3">
             <View className="flex-1">
-              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-500 text-xs mb-1.5">Male — count</Text>
+              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-400 text-xs mb-1.5">Male count</Text>
               <TextInput
                 value={String(formData.maleCount)}
                 onChangeText={(v) => handleChange('maleCount', Number(v) || 0)}
                 placeholder="0"
-                placeholderTextColor="#94a3b8"
                 keyboardType="numeric"
-                className="rounded-xl border border-slate-200 bg-slate-50 h-12 px-4 text-slate-900"
+                className="rounded-2xl bg-surface-tertiary h-12 px-4 text-primary-900"
                 style={{ fontFamily: 'Inter_600SemiBold' }}
               />
             </View>
             <View className="flex-1">
-              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-500 text-xs mb-1.5">Male — pay (₹)</Text>
+              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-400 text-xs mb-1.5">Male pay (₹)</Text>
               <TextInput
                 value={String(formData.malePay)}
                 onChangeText={(v) => handleChange('malePay', Number(v) || 0)}
                 placeholder="0"
-                placeholderTextColor="#94a3b8"
                 keyboardType="numeric"
-                className="rounded-xl border border-slate-200 bg-slate-50 h-12 px-4 text-slate-900"
+                className="rounded-2xl bg-surface-tertiary h-12 px-4 text-primary-900"
                 style={{ fontFamily: 'Inter_600SemiBold' }}
               />
             </View>
           </View>
           <View className="flex-row gap-3">
             <View className="flex-1">
-              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-500 text-xs mb-1.5">Female — count</Text>
+              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-400 text-xs mb-1.5">Female count</Text>
               <TextInput
                 value={String(formData.femaleCount)}
                 onChangeText={(v) => handleChange('femaleCount', Number(v) || 0)}
                 placeholder="0"
-                placeholderTextColor="#94a3b8"
                 keyboardType="numeric"
-                className="rounded-xl border border-slate-200 bg-slate-50 h-12 px-4 text-slate-900"
+                className="rounded-2xl bg-surface-tertiary h-12 px-4 text-primary-900"
                 style={{ fontFamily: 'Inter_600SemiBold' }}
               />
             </View>
             <View className="flex-1">
-              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-500 text-xs mb-1.5">Female — pay (₹)</Text>
+              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-400 text-xs mb-1.5">Female pay (₹)</Text>
               <TextInput
                 value={String(formData.femalePay)}
                 onChangeText={(v) => handleChange('femalePay', Number(v) || 0)}
                 placeholder="0"
-                placeholderTextColor="#94a3b8"
                 keyboardType="numeric"
-                className="rounded-xl border border-slate-200 bg-slate-50 h-12 px-4 text-slate-900"
+                className="rounded-2xl bg-surface-tertiary h-12 px-4 text-primary-900"
                 style={{ fontFamily: 'Inter_600SemiBold' }}
               />
             </View>
           </View>
-        </View>
+        </GlassCard>
 
-        {/* Total summary card */}
-        <View className="bg-white rounded-2xl p-4 mb-5 border border-slate-200/80 shadow-sm" style={{ shadowOpacity: 0.04, elevation: 2 }}>
-          <View className="flex-row justify-between mb-2">
-            <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-500 text-sm">Subtotal</Text>
-            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-slate-800">₹{subtotal.toFixed(2)}</Text>
+        {/* Total summary */}
+        <GlassCard className="mb-5">
+          <View className="gap-2">
+            <View className="flex-row justify-between">
+              <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-400 text-sm">Subtotal</Text>
+              <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900">₹{subtotal.toFixed(2)}</Text>
+            </View>
+            <View className="flex-row justify-between">
+              <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-400 text-sm">Platform fee (13%)</Text>
+              <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900">₹{commission.toFixed(2)}</Text>
+            </View>
+            <View className="flex-row justify-between pt-3 border-t border-surface-tertiary">
+              <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900 text-base">Total</Text>
+              <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-accent text-xl">₹{total.toFixed(2)}</Text>
+            </View>
           </View>
-          <View className="flex-row justify-between mb-2">
-            <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-500 text-sm">Platform fee (13%)</Text>
-            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-slate-800">₹{commission.toFixed(2)}</Text>
-          </View>
-          <View className="flex-row justify-between pt-3 border-t border-slate-200">
-            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-slate-900 text-base">Total</Text>
-            <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-primary text-xl">₹{total.toFixed(2)}</Text>
-          </View>
-        </View>
+        </GlassCard>
 
         {/* Submit */}
         <ScalePress
           onPress={handleSubmit}
           disabled={!isFormValid || isLoading}
-          className={`w-full py-4 rounded-2xl items-center justify-center ${isFormValid && !isLoading ? 'bg-primary' : 'bg-slate-200'}`}
-          style={isFormValid && !isLoading ? { shadowColor: '#008080', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 8, elevation: 4 } : undefined}
+          className={`w-full py-4 rounded-2xl items-center justify-center ${isFormValid && !isLoading ? 'bg-accent' : 'bg-slate-200'}`}
+          style={isFormValid && !isLoading ? {
+            shadowColor: '#E94560',
+            shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: 0.3,
+            shadowRadius: 12,
+            elevation: 6,
+          } : undefined}
         >
           {isLoading ? (
             <ActivityIndicator color="#fff" />
           ) : (
             <View className="flex-row items-center gap-2">
-              <Text style={{ fontFamily: 'Inter_700Bold' }} className={isFormValid ? 'text-white text-base' : 'text-slate-500 text-base'}>Create event</Text>
+              <Text style={{ fontFamily: 'Inter_700Bold' }} className={isFormValid ? 'text-white text-base' : 'text-slate-400 text-base'}>Create Event</Text>
               {isFormValid && <Icon name="check_circle" className="text-white text-xl" />}
             </View>
           )}

@@ -4,6 +4,8 @@ import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from 'rea
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../lib/api';
 import Icon from '../components/Icon';
+import { FadeInView } from '../components/AnimatedComponents';
+import { EmptyState } from '../components/DistrictUI';
 
 interface MessagesScreenProps {
   role: 'organizer' | 'worker';
@@ -53,8 +55,8 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({ role }) => {
     const days = Math.floor(diff / 86400000);
 
     if (minutes < 1) return 'now';
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
+    if (minutes < 60) return `${minutes}m`;
+    if (hours < 24) return `${hours}h`;
     if (days < 7) return date.toLocaleDateString('en-US', { weekday: 'short' });
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
@@ -69,12 +71,11 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({ role }) => {
   };
 
   return (
-    <View className="flex-1 bg-slate-50">
-      <View
-        className="bg-white border-b border-slate-100 px-5 pb-4"
-        style={{ paddingTop: Math.max(insets.top, 12) + 10 }}
-      >
-        <Text className="text-2xl font-extrabold text-slate-900 tracking-tight">Messages</Text>
+    <View className="flex-1 bg-surface-secondary">
+      <View className="bg-white" style={{ paddingTop: insets.top }}>
+        <View className="px-5 py-3">
+          <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-2xl text-primary-900 tracking-tight">Chat</Text>
+        </View>
       </View>
 
       <ScrollView
@@ -89,60 +90,63 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({ role }) => {
       >
         {isLoading ? (
           <View className="items-center justify-center py-20">
-            <ActivityIndicator size="large" color="#008080" />
+            <ActivityIndicator size="large" color="#E94560" />
           </View>
         ) : conversations.length === 0 ? (
-          <View className="items-center justify-center py-20 px-6">
-            <View className="h-24 w-24 rounded-full bg-slate-100 items-center justify-center mb-5">
-              <Icon name="chat-bubble" className="text-slate-300 text-5xl" />
-            </View>
-            <Text className="text-xl font-bold text-slate-800 mb-2">No messages yet</Text>
-            <Text className="text-base text-slate-500 text-center">
-              {role === 'organizer'
-                ? 'Chat with workers from your event team'
-                : 'Apply to gigs to message organizers'}
-            </Text>
-          </View>
+          <EmptyState
+            icon="chat-bubble"
+            title="No messages yet"
+            subtitle={role === 'organizer'
+              ? 'Chat with workers from your event team'
+              : 'Apply to gigs to message organizers'}
+          />
         ) : (
-          <View className="pt-3">
-            {conversations.map((chat) => (
-              <Pressable
-                key={chat.id}
-                onPress={() => router.push(`/chat/${chat.id}`)}
-                className="flex-row items-center gap-4 bg-white rounded-2xl p-4 mb-3 border border-slate-100 active:opacity-90"
-              >
-                <View className="h-14 w-14 rounded-2xl overflow-hidden bg-slate-100">
-                  {chat.participants.length === 1 && chat.participants[0]?.avatar_url ? (
-                    <Image
-                      source={{ uri: chat.participants[0].avatar_url }}
-                      className="w-full h-full"
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <View className="w-full h-full items-center justify-center bg-primary/10">
-                      {chat.participants.length > 1 ? (
-                        <Icon name="group" className="text-primary text-2xl" />
-                      ) : (
-                        <Icon name="person" className="text-primary text-2xl" />
-                      )}
+          <View className="gap-2">
+            {conversations.map((chat, index) => (
+              <FadeInView key={chat.id} delay={index * 40} duration={350}>
+                <Pressable
+                  onPress={() => router.push(`/chat/${chat.id}`)}
+                  className="flex-row items-center gap-4 bg-white rounded-2xl p-4 active:opacity-90"
+                  style={{
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.04,
+                    shadowRadius: 8,
+                    elevation: 2,
+                  }}
+                >
+                  <View className="h-13 w-13 rounded-2xl overflow-hidden bg-accent-50 items-center justify-center" style={{ width: 52, height: 52 }}>
+                    {chat.participants.length === 1 && chat.participants[0]?.avatar_url ? (
+                      <Image
+                        source={{ uri: chat.participants[0].avatar_url }}
+                        className="w-full h-full"
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View className="w-full h-full items-center justify-center">
+                        {chat.participants.length > 1 ? (
+                          <Icon name="group" className="text-accent text-2xl" />
+                        ) : (
+                          <Icon name="person" className="text-accent text-2xl" />
+                        )}
+                      </View>
+                    )}
+                  </View>
+                  <View className="flex-1 min-w-0">
+                    <View className="flex-row items-center justify-between gap-2">
+                      <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900 text-base flex-1" numberOfLines={1}>
+                        {displayTitle(chat)}
+                      </Text>
+                      <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-xs text-slate-400 shrink-0">
+                        {formatTime(chat.last_message_at)}
+                      </Text>
                     </View>
-                  )}
-                </View>
-                <View className="flex-1 min-w-0">
-                  <View className="flex-row items-center justify-between gap-2">
-                    <Text className="font-bold text-slate-900 text-lg flex-1" numberOfLines={1}>
-                      {displayTitle(chat)}
-                    </Text>
-                    <Text className="text-xs font-medium text-slate-400 shrink-0">
-                      {formatTime(chat.last_message_at)}
+                    <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-sm text-slate-400 mt-1" numberOfLines={1}>
+                      {displayPreview(chat)}
                     </Text>
                   </View>
-                  <Text className="text-base text-slate-500 mt-1" numberOfLines={1}>
-                    {displayPreview(chat)}
-                  </Text>
-                </View>
-                <Icon name="chevron_right" className="text-slate-300 text-xl" />
-              </Pressable>
+                </Pressable>
+              </FadeInView>
             ))}
           </View>
         )}

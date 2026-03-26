@@ -12,8 +12,8 @@ const WorkerLayout: React.FC = () => {
 
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-slate-50">
-        <ActivityIndicator size="large" color="#008080" />
+      <View className="flex-1 items-center justify-center bg-white">
+        <ActivityIndicator size="large" color="#E94560" />
       </View>
     );
   }
@@ -38,36 +38,41 @@ const WorkerLayout: React.FC = () => {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#008080',
-        tabBarInactiveTintColor: '#94a3b8',
+        tabBarActiveTintColor: '#E94560',
+        tabBarInactiveTintColor: '#B8B8D0',
         tabBarHideOnKeyboard: true,
         tabBarLabelStyle: {
           fontFamily: 'Inter_600SemiBold',
           fontSize: 10,
-          letterSpacing: 0.2,
+          letterSpacing: 0.3,
           marginTop: -2,
         },
         tabBarStyle: {
           backgroundColor: '#ffffff',
-          borderTopColor: '#e2e8f0',
+          borderTopColor: '#F1F3F8',
           borderTopWidth: 1,
-          paddingTop: 10,
-          paddingBottom: Math.max(insets.bottom, 16),
-          height: 64 + Math.max(insets.bottom, 16),
+          paddingTop: 8,
+          paddingBottom: Math.max(insets.bottom, 12),
+          height: 60 + Math.max(insets.bottom, 12),
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.06,
+          shadowRadius: 16,
+          elevation: 8,
         },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color, size }) => <MaterialIcons name="home" color={color} size={size} />,
+          title: 'Discover',
+          tabBarIcon: ({ color, size }) => <MaterialIcons name="explore" color={color} size={size} />,
         }}
       />
       <Tabs.Screen
         name="messages"
         options={{
-          title: 'Messages',
+          title: 'Chat',
           tabBarIcon: ({ color, size }) => <MaterialIcons name="chat-bubble-outline" color={color} size={size} />,
         }}
       />
@@ -81,8 +86,8 @@ const WorkerLayout: React.FC = () => {
       <Tabs.Screen
         name="applications"
         options={{
-          title: 'Applications',
-          tabBarIcon: ({ color, size }) => <MaterialIcons name="event-note" color={color} size={size} />,
+          title: 'Applied',
+          tabBarIcon: ({ color, size }) => <MaterialIcons name="bookmark-outline" color={color} size={size} />,
         }}
       />
       <Tabs.Screen

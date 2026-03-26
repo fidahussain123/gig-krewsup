@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import api from '../lib/api';
 import Icon from '../components/Icon';
+import { FadeInView, ScalePress } from '../components/AnimatedComponents';
+import { PillTabs, GlassCard, EmptyState } from '../components/DistrictUI';
 
 interface Applicant {
   id: string;
@@ -53,7 +56,7 @@ const EventDetailsScreen: React.FC = () => {
   const [event, setEvent] = useState<Event | null>(null);
   const [applicants, setApplicants] = useState<Applicant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'details' | 'applicants'>('applicants');
+  const [activeTab, setActiveTab] = useState(0);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [isCreatingChat, setIsCreatingChat] = useState(false);
@@ -66,25 +69,18 @@ const EventDetailsScreen: React.FC = () => {
   const loadEventDetails = async () => {
     if (!id) return;
     setIsLoading(true);
-    
-    // Load event details
     const eventResult = await api.getEvent(id);
     if (eventResult.data?.event) {
       setEvent(eventResult.data.event);
     }
-    
-    // Load applicants
     const applicantsResult = await api.getEventApplicants(id);
     if (applicantsResult.data?.applicants) {
       setApplicants(applicantsResult.data.applicants);
     }
-
-    // Load conversation if exists
     const convResult = await api.getEventConversation(id);
     if (convResult.data?.conversationId) {
       setConversationId(convResult.data.conversationId);
     }
-    
     setIsLoading(false);
   };
 
@@ -92,7 +88,7 @@ const EventDetailsScreen: React.FC = () => {
     setUpdatingId(applicantId);
     const result = await api.updateApplicationStatus(applicantId, status);
     if (result.data) {
-      setApplicants(prev => 
+      setApplicants(prev =>
         prev.map(a => a.id === applicantId ? { ...a, status } : a)
       );
     }
@@ -164,136 +160,136 @@ const EventDetailsScreen: React.FC = () => {
 
   if (isLoading) {
     return (
-      <View className="flex-1 bg-slate-50 items-center justify-center">
-        <ActivityIndicator size="large" color="#008080" />
+      <View className="flex-1 bg-surface-secondary items-center justify-center">
+        <ActivityIndicator size="large" color="#E94560" />
       </View>
     );
   }
 
   if (!event) {
     return (
-      <View className="flex-1 bg-slate-50 items-center justify-center">
-        <Text className="text-slate-400">Event not found</Text>
+      <View className="flex-1 bg-surface-secondary items-center justify-center">
+        <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-400">Event not found</Text>
       </View>
     );
   }
 
-  const topPad = Math.max(insets.top, 12);
-  const sidePad = 20;
-  const bottomPad = Math.max(insets.bottom, 24);
-
   return (
-    <View className="flex-1 bg-slate-50">
-      <View className="relative" style={{ paddingTop: topPad, paddingHorizontal: sidePad, paddingBottom: 8 }}>
-        <View className="rounded-2xl overflow-hidden h-40 bg-primary">
-          {event.image_url ? (
-            <Image source={{ uri: event.image_url }} className="w-full h-full" resizeMode="cover" />
-          ) : (
-            <View className="w-full h-full items-center justify-center">
-              <Icon name="event" className="text-white/30 text-5xl" />
-            </View>
-          )}
-        </View>
+    <View className="flex-1 bg-surface-secondary">
+      {/* Hero Image */}
+      <View className="relative h-52" style={{ paddingTop: 0 }}>
+        {event.image_url ? (
+          <Image source={{ uri: event.image_url }} className="w-full h-full" resizeMode="cover" />
+        ) : (
+          <View className="w-full h-full bg-primary items-center justify-center">
+            <Icon name="event" className="text-white/20 text-6xl" />
+          </View>
+        )}
+        <LinearGradient
+          colors={['rgba(0,0,0,0.4)', 'transparent', 'rgba(0,0,0,0.6)']}
+          className="absolute top-0 left-0 right-0 bottom-0"
+        />
         <Pressable
           onPress={() => router.back()}
           className="absolute h-10 w-10 rounded-full bg-black/30 items-center justify-center"
-          style={{ top: topPad + 8, left: sidePad + 8 }}
+          style={{ top: insets.top + 8, left: 16 }}
         >
-          <Icon name="arrow_back_ios_new" className="text-white text-lg" />
+          <Icon name="arrow_back_ios_new" className="text-white text-base" />
         </Pressable>
         <Pressable
           onPress={handleDeleteEvent}
           disabled={isDeleting}
           className="absolute h-10 w-10 rounded-full bg-black/30 items-center justify-center"
-          style={{ top: topPad + 8, right: sidePad + 8 }}
+          style={{ top: insets.top + 8, right: 16 }}
         >
-          <Icon name="delete_outline" className="text-white text-lg" />
+          <Icon name="delete_outline" className="text-white text-base" />
         </Pressable>
-        <View className="absolute bottom-3 left-4 right-4">
-          <Text className="text-lg font-extrabold text-white" numberOfLines={2}>{event.title}</Text>
+        <View className="absolute bottom-4 left-5 right-5">
+          <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-white text-xl" numberOfLines={2}>{event.title}</Text>
           {event.job_type && (
-            <View className="mt-1.5 px-2.5 py-0.5 rounded-full bg-white/25 self-start">
-              <Text className="text-white text-xs font-bold">{event.job_type}</Text>
+            <View className="mt-1.5 px-3 py-1 rounded-full bg-accent/90 self-start">
+              <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-white text-xs">{event.job_type}</Text>
             </View>
           )}
         </View>
       </View>
 
-      <View className="bg-white border-b border-slate-100 px-4 py-3 mt-1" style={{ paddingHorizontal: sidePad }}>
-        <View className="flex-row rounded-xl bg-slate-100 p-1">
-          <Pressable
-            onPress={() => setActiveTab('applicants')}
-            className={`flex-1 py-2 rounded-lg ${activeTab === 'applicants' ? 'bg-white' : ''}`}
-          >
-            <Text className={`text-sm font-bold text-center ${activeTab === 'applicants' ? 'text-primary' : 'text-slate-500'}`}>
-              Applicants ({applicants.length})
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={() => setActiveTab('details')}
-            className={`flex-1 py-2 rounded-lg ${activeTab === 'details' ? 'bg-white' : ''}`}
-          >
-            <Text className={`text-sm font-bold text-center ${activeTab === 'details' ? 'text-primary' : 'text-slate-500'}`}>
-              Event Details
-            </Text>
-          </Pressable>
-        </View>
+      {/* Tabs */}
+      <View className="bg-white py-3">
+        <PillTabs
+          tabs={[`Applicants (${applicants.length})`, 'Details']}
+          activeIndex={activeTab}
+          onTabPress={setActiveTab}
+        />
       </View>
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingTop: 16, paddingBottom: 32 + bottomPad, paddingHorizontal: sidePad }}
+        contentContainerStyle={{ paddingTop: 16, paddingBottom: 32 + insets.bottom, paddingHorizontal: 20 }}
         showsVerticalScrollIndicator={false}
       >
-        {activeTab === 'details' ? (
-          <View className="space-y-3">
-            <View className="bg-white rounded-xl p-3 shadow-sm">
-              <Text className="text-xs font-bold text-slate-400 uppercase mb-2">Group Chat</Text>
+        {activeTab === 1 ? (
+          <View className="gap-3">
+            <GlassCard>
+              <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-xs text-slate-400 uppercase tracking-wider mb-3">Group Chat</Text>
               <Pressable
                 onPress={handleCreateOrOpenChat}
                 disabled={isCreatingChat}
-                className="h-12 rounded-xl bg-primary items-center justify-center"
+                className="h-12 rounded-2xl bg-accent items-center justify-center"
+                style={{
+                  shadowColor: '#E94560',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 8,
+                  elevation: 4,
+                }}
               >
-                <Text className="text-white font-bold text-sm">
+                <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-white text-sm">
                   {isCreatingChat ? 'Creating...' : conversationId ? 'Open Group Chat' : 'Create Group Chat'}
                 </Text>
               </Pressable>
-            </View>
-            <View className="bg-white rounded-xl p-3 shadow-sm">
-              <Text className="text-xs font-bold text-slate-400 uppercase mb-2">Date & Time</Text>
+            </GlassCard>
+            <GlassCard>
+              <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-xs text-slate-400 uppercase tracking-wider mb-3">Date & Time</Text>
               <View className="flex-row items-center gap-3 mb-2">
-                <Icon name="calendar_today" className="text-primary" />
-                <Text className="font-medium">{formatDate(event.event_date)}</Text>
+                <View className="h-9 w-9 rounded-xl bg-accent-50 items-center justify-center">
+                  <Icon name="calendar-today" className="text-accent" />
+                </View>
+                <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-primary-900">{formatDate(event.event_date)}</Text>
               </View>
               <View className="flex-row items-center gap-3">
-                <Icon name="schedule" className="text-primary" />
-                <Text className="font-medium">{formatTime(event.start_time)} - {formatTime(event.end_time)}</Text>
+                <View className="h-9 w-9 rounded-xl bg-brand-50 items-center justify-center">
+                  <Icon name="schedule" className="text-brand" />
+                </View>
+                <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-primary-900">{formatTime(event.start_time)} - {formatTime(event.end_time)}</Text>
               </View>
-            </View>
+            </GlassCard>
 
-            <View className="bg-white rounded-xl p-3 shadow-sm">
-              <Text className="text-xs font-bold text-slate-400 uppercase mb-2">Location</Text>
+            <GlassCard>
+              <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-xs text-slate-400 uppercase tracking-wider mb-3">Location</Text>
               <View className="flex-row items-start gap-3">
-                <Icon name="location_on" className="text-primary" />
+                <View className="h-9 w-9 rounded-xl bg-accent-50 items-center justify-center">
+                  <Icon name="location-on" className="text-accent" />
+                </View>
                 <View>
-                  <Text className="font-medium">{event.venue || event.location}</Text>
+                  <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-primary-900">{event.venue || event.location}</Text>
                   {event.location && event.venue && (
-                    <Text className="text-sm text-slate-400">{event.location}</Text>
+                    <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-sm text-slate-400">{event.location}</Text>
                   )}
                 </View>
               </View>
-            </View>
+            </GlassCard>
 
-            <View className="bg-white rounded-xl p-3 shadow-sm">
-              <Text className="text-xs font-bold text-slate-400 uppercase mb-2">Staffing Requirements</Text>
+            <GlassCard>
+              <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-xs text-slate-400 uppercase tracking-wider mb-3">Staffing</Text>
               <View className="flex-row gap-4">
                 <View className="flex-row items-center gap-3">
                   <View className="h-10 w-10 rounded-xl bg-blue-50 items-center justify-center">
                     <Icon name="male" className="text-blue-500" />
                   </View>
                   <View>
-                    <Text className="text-xl font-extrabold">{event.male_count || 0}</Text>
-                    <Text className="text-xs text-slate-400">₹{event.male_pay || 0}/each</Text>
+                    <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-xl text-primary-900">{event.male_count || 0}</Text>
+                    <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-xs text-slate-400">₹{event.male_pay || 0}/each</Text>
                   </View>
                 </View>
                 <View className="flex-row items-center gap-3">
@@ -301,71 +297,67 @@ const EventDetailsScreen: React.FC = () => {
                     <Icon name="female" className="text-pink-500" />
                   </View>
                   <View>
-                    <Text className="text-xl font-extrabold">{event.female_count || 0}</Text>
-                    <Text className="text-xs text-slate-400">₹{event.female_pay || 0}/each</Text>
+                    <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-xl text-primary-900">{event.female_count || 0}</Text>
+                    <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-xs text-slate-400">₹{event.female_pay || 0}/each</Text>
                   </View>
                 </View>
               </View>
-            </View>
+            </GlassCard>
 
-            <View className="bg-white rounded-xl p-3 shadow-sm">
-              <Text className="text-xs font-bold text-slate-400 uppercase mb-2">Payment</Text>
-              <View className="space-y-2">
+            <GlassCard>
+              <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-xs text-slate-400 uppercase tracking-wider mb-3">Payment</Text>
+              <View className="gap-2">
                 <View className="flex-row justify-between">
-                  <Text className="text-slate-500">Subtotal</Text>
-                  <Text className="font-bold">₹{event.subtotal?.toFixed(2) || '0.00'}</Text>
+                  <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-400">Subtotal</Text>
+                  <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900">₹{event.subtotal?.toFixed(2) || '0.00'}</Text>
                 </View>
                 <View className="flex-row justify-between">
-                  <Text className="text-slate-500">Platform Fee (13%)</Text>
-                  <Text className="font-bold">₹{event.commission?.toFixed(2) || '0.00'}</Text>
+                  <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-400">Platform Fee (13%)</Text>
+                  <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900">₹{event.commission?.toFixed(2) || '0.00'}</Text>
                 </View>
-                <View className="flex-row justify-between pt-2 border-t border-slate-100">
-                  <Text className="font-bold text-slate-900">Total</Text>
-                  <Text className="font-extrabold text-primary text-lg">₹{event.total?.toFixed(2) || '0.00'}</Text>
+                <View className="flex-row justify-between pt-3 border-t border-surface-tertiary">
+                  <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900">Total</Text>
+                  <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-accent text-lg">₹{event.total?.toFixed(2) || '0.00'}</Text>
                 </View>
               </View>
-            </View>
+            </GlassCard>
 
             {event.description && (
-              <View className="bg-white rounded-xl p-3 shadow-sm">
-                <Text className="text-xs font-bold text-slate-400 uppercase mb-2">Description</Text>
-                <Text className="text-slate-600 text-sm">{event.description}</Text>
-              </View>
+              <GlassCard>
+                <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-xs text-slate-400 uppercase tracking-wider mb-3">Description</Text>
+                <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-600 text-sm leading-relaxed">{event.description}</Text>
+              </GlassCard>
             )}
 
-            <View className="bg-white rounded-xl p-3 shadow-sm border border-red-100">
-              <Text className="text-xs font-bold text-slate-400 uppercase mb-2">Danger zone</Text>
+            <GlassCard className="border border-error/20">
+              <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-xs text-slate-400 uppercase tracking-wider mb-3">Danger Zone</Text>
               <Pressable
                 onPress={handleDeleteEvent}
                 disabled={isDeleting}
-                className="h-12 rounded-xl border-2 border-red-300 bg-red-50 items-center justify-center"
+                className="h-12 rounded-2xl border-2 border-error/30 bg-error/5 items-center justify-center"
               >
-                <Text className="text-red-600 font-bold text-sm">
-                  {isDeleting ? 'Deleting…' : 'Delete event'}
+                <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-error text-sm">
+                  {isDeleting ? 'Deleting...' : 'Delete Event'}
                 </Text>
               </Pressable>
-            </View>
+            </GlassCard>
           </View>
         ) : (
-          <View className="space-y-3">
+          <View className="gap-3">
             {applicants.length === 0 ? (
-              <View className="items-center py-12">
-                <View className="h-16 w-16 rounded-full bg-slate-100 items-center justify-center mb-4">
-                  <Icon name="person_search" className="text-slate-300 text-3xl" />
-                </View>
-                <Text className="font-bold text-slate-700 mb-1">No Applicants Yet</Text>
-                <Text className="text-sm text-slate-400 text-center">
-                  Publish your event to start receiving applications
-                </Text>
-              </View>
+              <EmptyState
+                icon="person-search"
+                title="No Applicants Yet"
+                subtitle="Publish your event to start receiving applications"
+              />
             ) : (
               <>
                 {pendingApplicants.length > 0 && (
                   <View>
-                    <Text className="text-xs font-bold text-slate-400 uppercase mb-3">
+                    <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-xs text-slate-400 uppercase tracking-wider mb-3">
                       Pending ({pendingApplicants.length})
                     </Text>
-                    <View className="space-y-3">
+                    <View className="gap-3">
                       {pendingApplicants.map((applicant) => (
                         <ApplicantCard
                           key={applicant.id}
@@ -379,13 +371,12 @@ const EventDetailsScreen: React.FC = () => {
                     </View>
                   </View>
                 )}
-
                 {acceptedApplicants.length > 0 && (
                   <View>
-                    <Text className="text-xs font-bold text-slate-400 uppercase mb-3">
+                    <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-xs text-slate-400 uppercase tracking-wider mb-3">
                       Accepted ({acceptedApplicants.length})
                     </Text>
-                    <View className="space-y-3">
+                    <View className="gap-3">
                       {acceptedApplicants.map((applicant) => (
                         <ApplicantCard
                           key={applicant.id}
@@ -397,13 +388,12 @@ const EventDetailsScreen: React.FC = () => {
                     </View>
                   </View>
                 )}
-
                 {rejectedApplicants.length > 0 && (
                   <View>
-                    <Text className="text-xs font-bold text-slate-400 uppercase mb-3">
+                    <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-xs text-slate-400 uppercase tracking-wider mb-3">
                       Rejected ({rejectedApplicants.length})
                     </Text>
-                    <View className="space-y-3 opacity-60">
+                    <View className="gap-3 opacity-60">
                       {rejectedApplicants.map((applicant) => (
                         <ApplicantCard
                           key={applicant.id}
@@ -434,57 +424,60 @@ interface ApplicantCardProps {
   onViewProfile?: () => void;
 }
 
-const ApplicantCard: React.FC<ApplicantCardProps> = ({ 
-  applicant, 
-  onAccept, 
-  onReject, 
+const ApplicantCard: React.FC<ApplicantCardProps> = ({
+  applicant,
+  onAccept,
+  onReject,
   updating = false,
   showActions = true,
   onViewProfile
 }) => {
   return (
-    <View className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+    <GlassCard>
       <View className="flex-row items-start gap-3">
-        <View className="h-12 w-12 rounded-full bg-primary/10 items-center justify-center overflow-hidden">
+        <View className="h-12 w-12 rounded-2xl bg-accent-50 items-center justify-center overflow-hidden">
           {applicant.worker_photo || applicant.avatar_url ? (
             <Image source={{ uri: applicant.worker_photo || applicant.avatar_url }} className="w-full h-full" resizeMode="cover" />
           ) : (
-            <Text className="text-lg font-bold text-primary">{applicant.name?.[0] || 'A'}</Text>
+            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-lg text-accent">{applicant.name?.[0] || 'A'}</Text>
           )}
         </View>
         <View className="flex-1">
           <View className="flex-row items-center justify-between">
-            <Text className="font-bold text-slate-900" numberOfLines={1}>{applicant.name || 'Anonymous'}</Text>
+            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900" numberOfLines={1}>{applicant.name || 'Anonymous'}</Text>
             {applicant.status !== 'pending' && (
-              <Text className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
-                applicant.status === 'accepted' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+              <View className={`px-2.5 py-1 rounded-full ${
+                applicant.status === 'accepted' ? 'bg-success/10' : 'bg-error/10'
               }`}>
-                {applicant.status}
-              </Text>
+                <Text style={{ fontFamily: 'Inter_700Bold' }} className={`text-[10px] uppercase ${
+                  applicant.status === 'accepted' ? 'text-success' : 'text-error'
+                }`}>
+                  {applicant.status}
+                </Text>
+              </View>
             )}
           </View>
           {(applicant.age || applicant.experience_years) && (
-            <Text className="text-xs text-slate-400 mt-1">
+            <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-xs text-slate-400 mt-1">
               {applicant.age ? `${applicant.age} yrs` : 'Age N/A'} • {applicant.experience_years ?? 0} yrs exp
             </Text>
           )}
           {applicant.verification_status && (
-            <Text className="text-[10px] font-bold uppercase tracking-widest mt-1 text-primary">
-              Aadhaar {applicant.verification_status}
-            </Text>
-          )}
-          {applicant.phone && (
             <View className="flex-row items-center gap-1 mt-1">
-              <Icon name="phone" className="text-slate-400 text-xs" />
-              <Text className="text-xs text-slate-400">{applicant.phone}</Text>
+              <Icon name="verified" className="text-accent text-xs" />
+              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-[10px] uppercase tracking-wider text-accent">
+                Aadhaar {applicant.verification_status}
+              </Text>
             </View>
           )}
           {applicant.skills && (
-            <View className="flex-row flex-wrap gap-1 mt-2">
+            <View className="flex-row flex-wrap gap-1.5 mt-2">
               {applicant.skills.split(',').slice(0, 3).map((skill, idx) => (
-                <Text key={idx} className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-medium text-slate-600">
-                  {skill.trim()}
-                </Text>
+                <View key={idx} className="px-2.5 py-1 rounded-full bg-surface-tertiary">
+                  <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-[10px] text-slate-500">
+                    {skill.trim()}
+                  </Text>
+                </View>
               ))}
             </View>
           )}
@@ -494,30 +487,30 @@ const ApplicantCard: React.FC<ApplicantCardProps> = ({
       {onViewProfile && (
         <View className="mt-3">
           <Pressable onPress={onViewProfile}>
-            <Text className="text-primary text-xs font-bold underline">View Profile</Text>
+            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-accent text-xs">View Profile</Text>
           </Pressable>
         </View>
       )}
 
       {showActions && applicant.status === 'pending' && (
-        <View className="flex-row items-center gap-2 mt-4 pt-3 border-t border-slate-100">
+        <View className="flex-row items-center gap-2 mt-4 pt-3 border-t border-surface-tertiary">
           <Pressable
             onPress={onReject}
             disabled={updating}
-            className="flex-1 py-2.5 rounded-xl border border-red-200 items-center"
+            className="flex-1 py-2.5 rounded-xl border border-error/20 items-center"
           >
-            <Text className="text-red-500 font-bold text-sm">{updating ? '...' : 'Reject'}</Text>
+            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-error text-sm">{updating ? '...' : 'Reject'}</Text>
           </Pressable>
           <Pressable
             onPress={onAccept}
             disabled={updating}
-            className="flex-1 py-2.5 rounded-xl bg-green-500 items-center"
+            className="flex-1 py-2.5 rounded-xl bg-success items-center"
           >
-            <Text className="text-white font-bold text-sm">{updating ? '...' : 'Accept'}</Text>
+            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-white text-sm">{updating ? '...' : 'Accept'}</Text>
           </Pressable>
         </View>
       )}
-    </View>
+    </GlassCard>
   );
 };
 

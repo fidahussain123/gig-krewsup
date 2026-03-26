@@ -167,7 +167,15 @@ router.post('/', authMiddleware, roleMiddleware('organizer'), async (req: AuthRe
       });
     }
 
-    res.status(201).json({ message: 'Event created', eventId });
+    // Auto-create event group chat
+    let conversationId: string | null = null;
+    try {
+      conversationId = await createEventGroup(eventId, title, req.user!.id);
+    } catch (chatErr) {
+      console.error('Failed to create event group chat:', chatErr);
+    }
+
+    res.status(201).json({ message: 'Event created', eventId, conversationId });
   } catch (error: any) {
     console.error('Create event error:', error);
     res.status(500).json({ error: 'Internal server error' });

@@ -5,8 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 
-const PRIMARY_GREEN = '#008080';
-const CENTER_BUTTON_SIZE = 58;
+const CENTER_BUTTON_SIZE = 54;
 
 const OrganizerLayout: React.FC = () => {
   const { isLoggedIn, role, isOnboarded, isLoading } = useAuth();
@@ -15,8 +14,8 @@ const OrganizerLayout: React.FC = () => {
 
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-slate-50">
-        <ActivityIndicator size="large" color="#008080" />
+      <View className="flex-1 items-center justify-center bg-white">
+        <ActivityIndicator size="large" color="#E94560" />
       </View>
     );
   }
@@ -41,22 +40,27 @@ const OrganizerLayout: React.FC = () => {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#008080',
-        tabBarInactiveTintColor: '#94a3b8',
+        tabBarActiveTintColor: '#E94560',
+        tabBarInactiveTintColor: '#B8B8D0',
         tabBarHideOnKeyboard: true,
         tabBarLabelStyle: {
           fontFamily: 'Inter_600SemiBold',
           fontSize: 10,
-          letterSpacing: 0.2,
+          letterSpacing: 0.3,
           marginTop: -2,
         },
         tabBarStyle: {
           backgroundColor: '#ffffff',
-          borderTopColor: '#e2e8f0',
+          borderTopColor: '#F1F3F8',
           borderTopWidth: 1,
-          paddingTop: 10,
-          paddingBottom: Math.max(insets.bottom, 16),
-          height: 64 + Math.max(insets.bottom, 16),
+          paddingTop: 8,
+          paddingBottom: Math.max(insets.bottom, 12),
+          height: 60 + Math.max(insets.bottom, 12),
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.06,
+          shadowRadius: 16,
+          elevation: 8,
         },
       }}
     >
@@ -64,13 +68,13 @@ const OrganizerLayout: React.FC = () => {
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color, size }) => <MaterialIcons name="home" color={color} size={size} />,
+          tabBarIcon: ({ color, size }) => <MaterialIcons name="home-filled" color={color} size={size} />,
         }}
       />
       <Tabs.Screen
         name="events"
         options={{
-          title: 'Applications',
+          title: 'Events',
           tabBarIcon: ({ color, size }) => <MaterialIcons name="event-note" color={color} size={size} />,
         }}
       />
@@ -91,25 +95,25 @@ const OrganizerLayout: React.FC = () => {
                   width: CENTER_BUTTON_SIZE,
                   height: CENTER_BUTTON_SIZE,
                   borderRadius: CENTER_BUTTON_SIZE / 2,
-                  backgroundColor: PRIMARY_GREEN,
+                  backgroundColor: '#E94560',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  marginTop: -22,
-                  shadowColor: PRIMARY_GREEN,
-                  shadowOffset: { width: 0, height: 4 },
+                  marginTop: -20,
+                  shadowColor: '#E94560',
+                  shadowOffset: { width: 0, height: 6 },
                   shadowOpacity: 0.35,
-                  shadowRadius: 8,
+                  shadowRadius: 12,
                   elevation: 10,
                 }}
               >
-                <MaterialIcons name="add" color="#fff" size={32} />
+                <MaterialIcons name="add" color="#fff" size={28} />
               </View>
               <Text
                 style={{
                   fontFamily: 'Inter_600SemiBold',
                   fontSize: 10,
-                  marginTop: 6,
-                  color: props.focused ? PRIMARY_GREEN : '#94a3b8',
+                  marginTop: 4,
+                  color: props.focused ? '#E94560' : '#B8B8D0',
                 }}
               >
                 Create
@@ -121,7 +125,7 @@ const OrganizerLayout: React.FC = () => {
       <Tabs.Screen
         name="messages"
         options={{
-          title: 'Messages',
+          title: 'Chat',
           tabBarIcon: ({ color, size }) => <MaterialIcons name="chat-bubble-outline" color={color} size={size} />,
         }}
       />

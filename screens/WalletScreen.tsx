@@ -2,8 +2,11 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import Icon from '../components/Icon';
 import api from '../lib/api';
+import { FadeInView, ScalePress } from '../components/AnimatedComponents';
+import { StatCard, GlassCard } from '../components/DistrictUI';
 
 interface WalletScreenProps {
   role: 'organizer' | 'worker';
@@ -63,163 +66,159 @@ const WalletScreen: React.FC<WalletScreenProps> = ({ role }) => {
 
   const displayAmount = pendingTotal ?? 0;
   const mainLabel = role === 'organizer' ? 'Pending To Pay' : 'Pending Earnings';
-
   const isWorker = role === 'worker';
 
   return (
-    <View className="flex-1 bg-slate-50">
-      <View
-        className="bg-white border-b border-slate-100 px-4 pb-4"
-        style={{ paddingTop: insets.top + 12 }}
-      >
-        <View className="flex-row items-center justify-between">
-          {isWorker ? (
-            <View className="w-12" />
-          ) : (
+    <View className="flex-1 bg-surface-secondary">
+      <View className="bg-white" style={{ paddingTop: insets.top }}>
+        <View className="flex-row items-center justify-between px-5 py-3">
+          {!isWorker ? (
             <Pressable onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full">
-              <Icon name="arrow_back_ios_new" className="text-xl text-slate-700" />
+              <Icon name="arrow_back_ios_new" className="text-xl text-primary-900" />
             </Pressable>
+          ) : (
+            <View className="w-10" />
           )}
-          <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-lg text-slate-900">
+          <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-lg text-primary-900">
             {isWorker ? 'Wallet' : 'Wallet & Billing'}
           </Text>
-          <View className="w-12" />
+          <View className="w-10" />
         </View>
       </View>
 
       <ScrollView
         className="flex-1"
         contentContainerStyle={{
-          paddingHorizontal: 16,
+          paddingHorizontal: 20,
           paddingTop: 20,
-          paddingBottom: 32 + insets.bottom,
+          paddingBottom: 32 + insets.bottom + 80,
         }}
         refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="#008080" />
+          <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor="#E94560" />
         }
         showsVerticalScrollIndicator={false}
       >
-        <View className="bg-primary rounded-2xl px-5 pt-5 pb-6 shadow-lg" style={{ shadowColor: '#008080', shadowOpacity: 0.2, shadowRadius: 12, elevation: 4 }}>
-          <View className="flex-row items-center justify-between mb-2">
-            <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-white/80 text-xs uppercase tracking-wider">
-              {mainLabel}
-            </Text>
-            <View className="h-9 w-9 rounded-full bg-white/15 items-center justify-center">
-              <Icon name="account_balance_wallet" className="text-white" size={20} />
-            </View>
+        {/* Hero Wallet Card */}
+        <FadeInView delay={0} duration={400}>
+          <View className="rounded-3xl overflow-hidden" style={{
+            shadowColor: '#1A1A2E',
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.15,
+            shadowRadius: 20,
+            elevation: 8,
+          }}>
+            <LinearGradient
+              colors={['#1A1A2E', '#16213E', '#0F3460']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              className="px-6 pt-6 pb-7"
+            >
+              <View className="flex-row items-center justify-between mb-3">
+                <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-white/60 text-xs uppercase tracking-wider">
+                  {mainLabel}
+                </Text>
+                <View className="h-9 w-9 rounded-full bg-white/10 items-center justify-center">
+                  <Icon name="account-balance-wallet" className="text-white" size={18} />
+                </View>
+              </View>
+              {isLoading && pendingTotal === null ? (
+                <ActivityIndicator color="#fff" size="large" style={{ marginVertical: 24 }} />
+              ) : (
+                <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-4xl text-white tracking-tight mb-5">
+                  ₹{displayAmount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                </Text>
+              )}
+              {error && (
+                <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-white/80 text-xs mb-3">{error}</Text>
+              )}
+              <Pressable className="bg-accent rounded-2xl py-3 flex-row items-center justify-center gap-2"
+                style={{
+                  shadowColor: '#E94560',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 8,
+                  elevation: 4,
+                }}
+              >
+                <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-white text-sm">{isWorker ? 'Withdraw' : 'Add Funds'}</Text>
+                <Icon name="arrow_forward" className="text-white" size={16} />
+              </Pressable>
+            </LinearGradient>
           </View>
-          {isLoading && pendingTotal === null ? (
-            <ActivityIndicator color="#fff" size="large" style={{ marginVertical: 24 }} />
-          ) : (
-            <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-4xl text-white tracking-tight mb-5">
-              ₹{displayAmount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-            </Text>
-          )}
-          {error && (
-            <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-white/90 text-xs mb-3">{error}</Text>
-          )}
-          <Pressable className="bg-white rounded-xl py-3 flex-row items-center justify-center gap-2">
-            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary text-sm">{isWorker ? 'Withdraw' : 'Add Funds'}</Text>
-            <Icon name="arrow_forward" className="text-primary" size={18} />
-          </Pressable>
-        </View>
+        </FadeInView>
 
         {isWorker && (
-          <>
+          <FadeInView delay={150} duration={400}>
             <View className="flex-row items-center justify-between mt-6 mb-3">
-              <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-slate-800 text-base">Applications</Text>
+              <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900 text-base">Applications</Text>
               <Pressable onPress={() => router.push('/worker/applications')} className="py-1">
-                <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-primary text-sm">View all</Text>
+                <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-accent text-sm">View all</Text>
               </Pressable>
             </View>
             <View className="flex-row gap-3">
-              <View className="flex-1 bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
-                <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-400 text-xs uppercase tracking-wider mb-1">Total</Text>
-                <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-2xl text-slate-900">{appStats.total}</Text>
-                <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-500 text-xs mt-0.5">applications</Text>
-              </View>
-              <View className="flex-1 bg-white rounded-xl p-4 border border-green-100 shadow-sm">
-                <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-green-600 text-xs uppercase tracking-wider mb-1">Accepted</Text>
-                <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-2xl text-green-700">{appStats.accepted}</Text>
-                <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-500 text-xs mt-0.5">confirmed</Text>
-              </View>
+              <StatCard label="Total" value={String(appStats.total)} icon="assignment" color="accent" />
+              <StatCard label="Accepted" value={String(appStats.accepted)} icon="check-circle" color="success" />
             </View>
             <View className="flex-row gap-3 mt-3">
-              <View className="flex-1 bg-white rounded-xl p-4 border border-amber-100 shadow-sm">
-                <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-amber-600 text-xs uppercase tracking-wider mb-1">Pending</Text>
-                <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-2xl text-amber-700">{appStats.pending}</Text>
-                <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-500 text-xs mt-0.5">awaiting</Text>
-              </View>
-              <View className="flex-1 bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
-                <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-400 text-xs uppercase tracking-wider mb-1">Rejected</Text>
-                <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-2xl text-slate-600">{appStats.rejected}</Text>
-                <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-500 text-xs mt-0.5">declined</Text>
-              </View>
+              <StatCard label="Pending" value={String(appStats.pending)} icon="schedule" color="warning" />
+              <StatCard label="Declined" value={String(appStats.rejected)} icon="cancel" color="accent" />
             </View>
-          </>
+          </FadeInView>
         )}
 
         {role === 'organizer' && (
-          <>
-            <View className="flex-row gap-4 mt-6">
-              <View className="flex-1 bg-white p-6 rounded-3xl shadow-sm ring-1 ring-slate-100">
-                <Text className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-2">Jobs Completed</Text>
-                <Text className="text-2xl font-extrabold text-slate-900">12</Text>
-              </View>
-              <View className="flex-1 bg-white p-6 rounded-3xl shadow-sm ring-1 ring-slate-100">
-                <Text className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-2">Avg. Per Gig</Text>
-                <Text className="text-2xl font-extrabold text-slate-900">$103.30</Text>
-              </View>
+          <FadeInView delay={150} duration={400}>
+            <View className="flex-row gap-3 mt-6">
+              <GlassCard className="flex-1">
+                <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-400 text-[10px] uppercase tracking-wider mb-2">Jobs Done</Text>
+                <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-2xl text-primary-900">12</Text>
+              </GlassCard>
+              <GlassCard className="flex-1">
+                <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-400 text-[10px] uppercase tracking-wider mb-2">Avg. Per Gig</Text>
+                <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-2xl text-primary-900">$103</Text>
+              </GlassCard>
             </View>
 
-            <View className="space-y-6 mt-6">
-              <View className="flex-row items-center justify-between">
-                <Text className="text-xl font-extrabold text-slate-900">Payment History</Text>
+            <View className="mt-6">
+              <View className="flex-row items-center justify-between mb-3">
+                <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900 text-lg">Payment History</Text>
                 <Pressable>
-                  <Text className="text-primary text-sm font-bold">View All</Text>
+                  <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-accent text-sm">View All</Text>
                 </Pressable>
               </View>
-              <View className="space-y-4">
+              <View className="gap-3">
                 {[
                   { title: 'Tech Conference 2024', date: 'Oct 12', val: '245.00', status: 'Paid', icon: 'check_circle' },
                   { title: 'Luxury Gala Hosting', date: 'Oct 10', val: '150.00', status: 'Processing', icon: 'sync' },
                   { title: 'Private Wedding Setup', date: 'Oct 08', val: '320.00', status: 'Paid', icon: 'check_circle' }
                 ].map((tx, idx) => (
-                  <View key={idx} className="flex-row items-center gap-4 bg-white p-5 rounded-3xl shadow-sm ring-1 ring-slate-100">
-                    <View className={`h-14 w-14 rounded-2xl items-center justify-center ${
-                      tx.status === 'Paid' ? 'bg-primary/5' : 'bg-accent/10'
-                    }`}>
-                      <Icon name={tx.icon} className={`${tx.status === 'Paid' ? 'text-primary' : 'text-yellow-700'} text-3xl`} />
-                    </View>
-                    <View className="flex-1">
-                      <Text className="text-base font-extrabold text-slate-900" numberOfLines={1}>{tx.title}</Text>
-                      <Text className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">{tx.date} • 8.5 Hours</Text>
-                    </View>
-                    <View className="items-end">
-                      <Text className="text-lg font-extrabold text-slate-900">+{role === 'organizer' ? '-' : ''}${tx.val}</Text>
-                      <Text className={`mt-1 px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-widest ${
-                        tx.status === 'Paid' ? 'bg-primary/10 text-primary' : 'bg-accent/10 text-yellow-700'
+                  <GlassCard key={idx}>
+                    <View className="flex-row items-center gap-4">
+                      <View className={`h-12 w-12 rounded-2xl items-center justify-center ${
+                        tx.status === 'Paid' ? 'bg-accent-50' : 'bg-amber-50'
                       }`}>
-                        {tx.status}
-                      </Text>
+                        <Icon name={tx.icon} className={`${tx.status === 'Paid' ? 'text-accent' : 'text-warning'} text-2xl`} />
+                      </View>
+                      <View className="flex-1">
+                        <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900" numberOfLines={1}>{tx.title}</Text>
+                        <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-xs text-slate-400 mt-0.5">{tx.date}</Text>
+                      </View>
+                      <View className="items-end">
+                        <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900">-${tx.val}</Text>
+                        <View className={`mt-1 px-2 py-0.5 rounded-full ${
+                          tx.status === 'Paid' ? 'bg-accent-50' : 'bg-amber-50'
+                        }`}>
+                          <Text style={{ fontFamily: 'Inter_700Bold' }} className={`text-[9px] uppercase ${
+                            tx.status === 'Paid' ? 'text-accent' : 'text-warning'
+                          }`}>{tx.status}</Text>
+                        </View>
+                      </View>
                     </View>
-                  </View>
+                  </GlassCard>
                 ))}
               </View>
             </View>
-
-            <View className="bg-white p-7 rounded-3xl shadow-sm ring-1 ring-slate-100 mt-6">
-              <View className="flex-row items-center justify-between mb-4">
-                <Text className="text-sm font-extrabold text-slate-900">Earnings Trends</Text>
-                <Text className="text-[10px] font-extrabold text-primary bg-primary/5 px-3 py-1.5 rounded-xl uppercase tracking-widest">
-                  +12% vs last week
-                </Text>
-              </View>
-              <View className="h-40 w-full items-center justify-center bg-slate-50 rounded-2xl">
-                <Text className="text-slate-400 text-sm">Chart not available on mobile yet.</Text>
-              </View>
-            </View>
-          </>
+          </FadeInView>
         )}
       </ScrollView>
     </View>

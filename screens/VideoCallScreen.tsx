@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
 import socketClient from '../lib/socket';
 import Icon from '../components/Icon';
@@ -195,57 +196,93 @@ const VideoCallScreen: React.FC = () => {
   };
 
   return (
-    <View className="flex-1 bg-slate-900">
-      <View className="flex-row items-center justify-between px-4" style={{ paddingTop: insets.top + 12, paddingBottom: 8 }}>
+    <View className="flex-1 bg-primary-dark">
+      <LinearGradient
+        colors={['#1A1A2E', '#16213E', '#0F3460']}
+        className="absolute top-0 left-0 right-0 bottom-0"
+      />
+
+      {/* Header */}
+      <View className="flex-row items-center justify-between px-5" style={{ paddingTop: insets.top + 12, paddingBottom: 8 }}>
         <Pressable onPress={handleLeave} className="h-11 w-11 items-center justify-center rounded-2xl bg-white/10">
           <Icon name="expand-more" className="text-white text-2xl" />
         </Pressable>
         <View className="items-center">
-          <Text className="text-white text-base font-extrabold">Voice Call</Text>
-          <Text className="text-white/60 text-[10px] font-bold uppercase tracking-widest">
+          <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-white text-base">Voice Call</Text>
+          <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-white/50 text-[10px] uppercase tracking-widest">
             {conversationId ? 'Event Chat' : 'Direct Call'}
           </Text>
         </View>
         <View className="h-11 w-11" />
       </View>
 
+      {/* Participants */}
       <ScrollView className="flex-1 px-5 py-4" contentContainerStyle={{ paddingBottom: 120 }}>
         {!isReady ? (
-          <View className="items-center justify-center py-12">
-            <ActivityIndicator size="large" color="#ffffff" />
-            <Text className="text-white/60 text-xs mt-3">Connecting...</Text>
+          <View className="items-center justify-center py-16">
+            <ActivityIndicator size="large" color="#E94560" />
+            <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-white/50 text-xs mt-4">Connecting...</Text>
           </View>
         ) : peerIds.length === 0 ? (
-          <View className="items-center justify-center py-12">
-            <Text className="text-white/60 text-xs">Waiting for others to join</Text>
+          <View className="items-center justify-center py-16">
+            <View className="h-20 w-20 rounded-3xl bg-white/5 items-center justify-center mb-4">
+              <Icon name="group" className="text-white/20 text-3xl" />
+            </View>
+            <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-white/40 text-sm">Waiting for others to join...</Text>
           </View>
         ) : (
-          <View className="space-y-3">
+          <View className="gap-3">
             {peerIds.map(pid => (
-              <View key={pid} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <Text className="text-white text-sm font-bold">Connected member</Text>
-                <Text className="text-white/50 text-xs mt-1">ID: {pid}</Text>
+              <View
+                key={pid}
+                className="rounded-2xl bg-white/5 p-5 flex-row items-center gap-4"
+                style={{
+                  borderWidth: 1,
+                  borderColor: 'rgba(255,255,255,0.08)',
+                }}
+              >
+                <View className="h-12 w-12 rounded-full bg-accent/20 items-center justify-center">
+                  <Icon name="person" className="text-accent text-xl" />
+                </View>
+                <View className="flex-1">
+                  <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-white text-sm">Connected Member</Text>
+                  <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-white/30 text-xs mt-0.5">ID: {pid.slice(0, 8)}...</Text>
+                </View>
+                <View className="h-3 w-3 rounded-full bg-success" />
               </View>
             ))}
           </View>
         )}
       </ScrollView>
 
-      <View className="pt-4 px-6" style={{ paddingBottom: Math.max(insets.bottom, 16) + 8 }}>
-        <View className="flex-row items-center justify-between">
+      {/* Controls */}
+      <View className="pt-4 px-8" style={{ paddingBottom: Math.max(insets.bottom, 16) + 12 }}>
+        <View className="flex-row items-center justify-center gap-8">
           <Pressable onPress={toggleMute} className="items-center gap-2">
-            <View className="h-16 w-16 rounded-full bg-white/10 items-center justify-center border border-white/10">
+            <View
+              className={`h-16 w-16 rounded-full items-center justify-center ${isMuted ? 'bg-white/20' : 'bg-white/10'}`}
+              style={{ borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}
+            >
               <Icon name={isMuted ? 'mic-off' : 'mic'} className="text-white text-2xl" />
             </View>
-            <Text className="text-[9px] font-extrabold text-white/40 uppercase tracking-widest">
+            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[9px] text-white/40 uppercase tracking-widest">
               {isMuted ? 'Unmute' : 'Mute'}
             </Text>
           </Pressable>
           <Pressable onPress={handleLeave} className="items-center gap-2">
-            <View className="h-16 w-16 rounded-[2rem] bg-red-500 items-center justify-center">
+            <View
+              className="h-16 w-16 rounded-full bg-error items-center justify-center"
+              style={{
+                shadowColor: '#FF4757',
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: 0.4,
+                shadowRadius: 12,
+                elevation: 6,
+              }}
+            >
               <Icon name="call-end" className="text-white text-3xl" />
             </View>
-            <Text className="text-[9px] font-extrabold text-red-400 uppercase tracking-widest">End Call</Text>
+            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[9px] text-error uppercase tracking-widest">End Call</Text>
           </Pressable>
         </View>
       </View>
