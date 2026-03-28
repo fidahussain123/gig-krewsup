@@ -109,6 +109,28 @@ class ApiClient {
     return result;
   }
 
+  async loginWithFirebase(idToken: string) {
+    const result = await this.request<{ user: any; token: string }>('/auth/firebase/login', {
+      method: 'POST',
+      body: JSON.stringify({ idToken }),
+    });
+    if (result.data?.token) {
+      await this.setToken(result.data.token);
+    }
+    return result;
+  }
+
+  async registerWithFirebase(idToken: string, name: string, phone: string) {
+    const result = await this.request<{ user: any; token: string }>('/auth/firebase/register', {
+      method: 'POST',
+      body: JSON.stringify({ idToken, name, phone }),
+    });
+    if (result.data?.token) {
+      await this.setToken(result.data.token);
+    }
+    return result;
+  }
+
   async getMe() {
     return this.request<{ user: any; profile: any }>('/auth/me');
   }

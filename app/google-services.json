@@ -1,0 +1,175 @@
+{
+  "project_info": {
+    "project_number": "175055254672",
+    "project_id": "krewsup-a5d94",
+    "storage_bucket": "krewsup-a5d94.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:175055254672:android:441322555854ec628bd415",
+        "android_client_info": {
+          "package_name": "com.example.krewsup"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "175055254672-e82vko6nb30q239plucctd8tu7oggn9d.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.krewsup",
+            "certificate_hash": "97a0eba2f6ce888d095949ec043e0a50d0d259b7"
+          }
+        },
+        {
+          "client_id": "175055254672-o3osh08gh8e82ih7ljv9j20j1oonua3k.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.krewsup",
+            "certificate_hash": "745a8ce65e9c9aac2c68cbc09c44e6a73c1c171c"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDoh1cMs5SMz09PQT_NOBF6VYICYJqHSbQ"
+        },
+        {
+          "current_key": "AIzaSyB49FqyDx4QHM04YamfnjEpZwsWKRfZcqU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "175055254672-q59akio1nc9ao68cdqr9qikck77htv5r.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.krewsup"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:175055254672:android:72492661fc350daf8bd415",
+        "android_client_info": {
+          "package_name": "com.krewsup.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "175055254672-9gnsfgpihi48dr8u97eg8qmbf4tod4h1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.krewsup.app",
+            "certificate_hash": "97a0eba2f6ce888d095949ec043e0a50d0d259b7"
+          }
+        },
+        {
+          "client_id": "175055254672-ivnlfae0s1u0d9a9e4o3npt3m9qmf32h.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.krewsup.app",
+            "certificate_hash": "97a83091790104f4ec8c407b711e9e7727706a70"
+          }
+        },
+        {
+          "client_id": "175055254672-k7hbhk0omfvbrlj6ah6vvqtj7oli8tif.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.krewsup.app",
+            "certificate_hash": "182aac44824d019e5056232ec0dc14bd70b8bc3d"
+          }
+        },
+        {
+          "client_id": "175055254672-vcfj2jdsqicnnnrev5jgomocgoaclu90.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.krewsup.app",
+            "certificate_hash": "745a8ce65e9c9aac2c68cbc09c44e6a73c1c171c"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDoh1cMs5SMz09PQT_NOBF6VYICYJqHSbQ"
+        },
+        {
+          "current_key": "AIzaSyB49FqyDx4QHM04YamfnjEpZwsWKRfZcqU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "175055254672-q59akio1nc9ao68cdqr9qikck77htv5r.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.krewsup"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:175055254672:android:56c6467c4712b5ed8bd415",
+        "android_client_info": {
+          "package_name": "com.krewsupindia.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "175055254672-03savloecpcpv8fhsm5jc3jhejc3fsuu.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.krewsupindia.app",
+            "certificate_hash": "745a8ce65e9c9aac2c68cbc09c44e6a73c1c171c"
+          }
+        },
+        {
+          "client_id": "175055254672-0j5eusp5betr3qe5ldu1o5tnga81165d.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.krewsupindia.app",
+            "certificate_hash": "97a83091790104f4ec8c407b711e9e7727706a70"
+          }
+        },
+        {
+          "client_id": "175055254672-627053sn5e0ise55sfr3jsg04fsl4r0r.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.krewsupindia.app",
+            "certificate_hash": "cbcb75607ddcc331ddc141900da48d8896f32325"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDoh1cMs5SMz09PQT_NOBF6VYICYJqHSbQ"
+        },
+        {
+          "current_key": "AIzaSyB49FqyDx4QHM04YamfnjEpZwsWKRfZcqU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "175055254672-q59akio1nc9ao68cdqr9qikck77htv5r.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.krewsup"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
