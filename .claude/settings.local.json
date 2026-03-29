@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx expo:*)",
+      "Bash(cd:*)",
+      "Bash(node -e \"const rn = require\\(''''E:/k/reactapp/gig-krewsup/node_modules/react-native/package.json''''\\); console.log\\(rn.version\\)\")",
+      "Bash(node -e \"try{const g=require\\(''''E:/k/reactapp/gig-krewsup/node_modules/@react-native/gradle-plugin/build.gradle.kts''''\\); console.log\\(g\\)}catch\\(e\\){}\")",
+      "Bash(grep -r ndkVersion E:/k/reactapp/gig-krewsup/node_modules/react-native --include=*.gradle --include=*.gradle.kts)",
+      "Bash(xargs grep:*)",
+      "Bash(find E:/k/reactapp/gig-krewsup/node_modules/@react-native/gradle-plugin -name *.toml)",
+      "Bash(find E:/k/reactapp/gig-krewsup/node_modules/react-native -name *.toml)",
+      "Bash(find E:/k/reactapp/gig-krewsup/node_modules/@react-native/gradle-plugin -name *.kt)",
+      "Bash(grep -r ext.ndkVersion E:/k/reactapp/gig-krewsup/node_modules --include=*.gradle --include=*.gradle.kts)",
+      "Bash(grep -r rootProject.ext.ndkVersions*= E:/k/reactapp/gig-krewsup/node_modules --include=*.gradle --include=*.gradle.kts)",
+      "Bash(find E:/k/reactapp/gig-krewsup/node_modules/@react-native/gradle-plugin -name *.gradle)",
+      "Bash(find E:/k/reactapp/gig-krewsup/node_modules/@react-native/gradle-plugin -name ExpoRootPlugin* -o -name ReactRootProjectPlugin*)",
+      "Bash(grep -r ext.ndkVersion E:/k/reactapp/gig-krewsup/node_modules/expo --include=*.gradle --include=*.gradle.kts --include=*.kt)",
+      "Bash(grep -r ndkVersion E:/k/reactapp/gig-krewsup/node_modules/expo-modules-core/android --include=*.gradle --include=*.kt)",
+      "Bash(find E:/k/reactapp/gig-krewsup -name .env -not -path */node_modules/*)",
+      "Bash(xargs cat:*)"
+    ]
+  }
+}

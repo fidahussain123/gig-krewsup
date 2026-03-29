@@ -19,7 +19,7 @@
       "permissions": [
         "RECORD_AUDIO"
       ],
-      "package": "com.fidasp.krewsup",
+      "package": "com.krewsupindia.app",
       "softwareKeyboardLayoutMode": "pan",
       "usesCleartextTraffic": true
     },
@@ -32,7 +32,9 @@
       }
     },
     "plugins": [
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth"
     ]
   }
 }
