@@ -1,8 +1,14 @@
+import dns from 'dns';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import pg from 'pg';
 import dotenv from 'dotenv';
 
 dotenv.config();
+
+// EC2 and many VPCs have no IPv6 route; Node may pick Supabase's AAAA first → ENETUNREACH.
+if (typeof dns.setDefaultResultOrder === 'function') {
+  dns.setDefaultResultOrder('ipv4first');
+}
 
 const { Pool } = pg;
 
