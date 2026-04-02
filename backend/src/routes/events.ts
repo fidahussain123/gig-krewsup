@@ -342,16 +342,22 @@ router.post('/:id/conversation', authMiddleware, roleMiddleware('organizer'), as
 });
 
 // Get public/published events (for workers to browse)
+// Excludes events the worker has already applied to
 router.get('/browse/all', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
+    const userId = req.user!.id;
     const result = await db.execute({
-      sql: `SELECT e.*, u.name as organizer_name, op.company_name 
-            FROM events e 
+      sql: `SELECT e.*, u.name as organizer_name, op.company_name
+            FROM events e
             JOIN users u ON e.organizer_id = u.id
             LEFT JOIN organizer_profiles op ON u.id = op.user_id
             WHERE e.status IN ('published', 'draft')
+              AND e.id NOT IN (
+                SELECT event_id FROM applications
+                WHERE worker_id = ? AND event_id IS NOT NULL
+              )
             ORDER BY e.event_date ASC`,
-      args: [],
+      args: [userId],
     });
 
     res.json({ events: result.rows });
@@ -377,33 +383,56 @@ router.get('/nearby', authMiddleware, roleMiddleware('worker'), async (req: Auth
       radiusKm = 25;
     }
 
-    // Clamp radius between 5km and 100km
-    radiusKm = Math.max(5, Math.min(radiusKm, 100));
+    // Clamp radius between 1km and 200km
+    radiusKm = Math.max(1, Math.min(radiusKm, 200));
+
+    const userId = req.user!.id;
+
+    console.log(`Nearby search: lat=${lat}, lng=${lng}, radius=${radiusKm}km, userId=${userId}`);
+
+    // First check: how many events have lat/lng at all?
+    const debugResult = await db.execute({
+      sql: `SELECT id, title, latitude, longitude, status FROM events WHERE latitude IS NOT NULL AND longitude IS NOT NULL`,
+      args: [],
+    });
+    console.log(`Events with coordinates: ${debugResult.rows.length}`, debugResult.rows.map((r: any) => ({
+      id: r.id, title: r.title, lat: r.latitude, lng: r.longitude, status: r.status
+    })));
 
     const result = await db.execute({
       sql: `
-        SELECT 
-          e.*,
-          u.name as organizer_name,
-          op.company_name,
-          (
-            6371 * acos(
-              cos(radians(?)) * cos(radians(e.latitude)) * cos(radians(e.longitude) - radians(?))
-              + sin(radians(?)) * sin(radians(e.latitude))
+        SELECT sub.* FROM (
+          SELECT
+            e.*,
+            u.name as organizer_name,
+            op.company_name,
+            (
+              6371 * acos(
+                LEAST(1.0, GREATEST(-1.0,
+                  cos(radians(?)) * cos(radians(e.latitude)) * cos(radians(e.longitude) - radians(?))
+                  + sin(radians(?)) * sin(radians(e.latitude))
+                ))
+              )
+            ) AS distance_km
+          FROM events e
+          JOIN users u ON e.organizer_id = u.id
+          LEFT JOIN organizer_profiles op ON u.id = op.user_id
+          WHERE
+            e.status IN ('published', 'draft')
+            AND e.latitude IS NOT NULL
+            AND e.longitude IS NOT NULL
+            AND e.id NOT IN (
+              SELECT event_id FROM applications
+              WHERE worker_id = ? AND event_id IS NOT NULL
             )
-          ) AS distance_km
-        FROM events e
-        JOIN users u ON e.organizer_id = u.id
-        LEFT JOIN organizer_profiles op ON u.id = op.user_id
-        WHERE 
-          e.status = 'published'
-          AND e.latitude IS NOT NULL
-          AND e.longitude IS NOT NULL
-        HAVING distance_km <= ?
-        ORDER BY distance_km ASC, e.event_date ASC
+        ) sub
+        WHERE sub.distance_km <= ?
+        ORDER BY sub.distance_km ASC, sub.event_date ASC
       `,
-      args: [lat, lng, lat, radiusKm],
+      args: [lat, lng, lat, userId, radiusKm],
     });
+
+    console.log(`Nearby results: ${result.rows.length} events found within ${radiusKm}km`);
 
     const events = result.rows.map(row => {
       const r: any = row;
@@ -415,8 +444,9 @@ router.get('/nearby', authMiddleware, roleMiddleware('worker'), async (req: Auth
 
     res.json({ events });
   } catch (error: any) {
-    console.error('Nearby events error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Nearby events error:', error?.message || error);
+    console.error('Nearby events stack:', error?.stack);
+    res.status(500).json({ error: error?.message || 'Internal server error' });
   }
 });
 

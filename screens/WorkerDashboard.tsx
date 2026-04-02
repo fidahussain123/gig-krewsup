@@ -1,6 +1,14 @@
 const WORKER_LOCATION_KEY = 'worker_location';
 const LOCATION_MAX_AGE_MS = 30 * 60 * 1000; // 30 min
-const RADII_KM = [10, 25, 50, 100];
+const RADII_KM = [5, 10, 25, 50, 100];
+
+const DISTANCE_OPTIONS = [
+  { value: 5, label: 'Within 5 km' },
+  { value: 10, label: 'Within 10 km' },
+  { value: 25, label: 'Within 25 km' },
+  { value: 50, label: 'Within 50 km' },
+  { value: 100, label: 'Within 100 km' },
+];
 
 const SORT_OPTIONS: { value: 'default' | 'payHigh' | 'payLow' | 'soon' | 'nearby'; label: string }[] = [
   { value: 'default', label: 'Default' },
@@ -40,6 +48,7 @@ const WorkerDashboard: React.FC = () => {
   const [filterVisible, setFilterVisible] = useState(false);
   const [minPay, setMinPay] = useState<string>('');
   const [sortBy, setSortBy] = useState<'default' | 'payHigh' | 'payLow' | 'soon' | 'nearby'>('default');
+  const [maxDistance, setMaxDistance] = useState<number>(0); // 0 = no distance filter
 
   useEffect(() => {
     loadGigs();
@@ -73,7 +82,12 @@ const WorkerDashboard: React.FC = () => {
     } else if (activeFilter === 'nearby') {
       list = nearbyEvents;
     } else {
-      list = events;
+      // When distance filter is active on "All" tab, show nearby results instead
+      if (maxDistance > 0 && nearbyEvents.length > 0) {
+        list = nearbyEvents;
+      } else {
+        list = events;
+      }
     }
     const minPayNum = minPay.trim() ? parseFloat(minPay) : NaN;
     if (!Number.isNaN(minPayNum)) {
@@ -93,7 +107,7 @@ const WorkerDashboard: React.FC = () => {
       list.sort((a, b) => (a.distanceKm ?? 999) - (b.distanceKm ?? 999));
     }
     return list;
-  }, [events, activeFilter, savedIds, nearbyEvents, minPay, sortBy]);
+  }, [events, activeFilter, savedIds, nearbyEvents, minPay, sortBy, maxDistance]);
 
   const loadGigs = async () => {
     setIsLoading(true);
@@ -130,48 +144,83 @@ const WorkerDashboard: React.FC = () => {
     }
   };
 
-  const loadNearby = async () => {
-    if (Platform.OS === 'web') {
-      setLocationError('Location services are not available on web. Please use the mobile app.');
-      setIsLoadingNearby(false);
-      return;
-    }
+  const getWebLocation = (): Promise<{ lat: number; lng: number }> => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Geolocation not supported'));
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        (err) => reject(err),
+        { enableHighAccuracy: false, timeout: 10000 }
+      );
+    });
+  };
 
+  const loadNearby = async (filterRadius?: number) => {
     try {
       setIsLoadingNearby(true);
       setLocationError(null);
 
       let lat: number;
       let lng: number;
-      const Location = await import('expo-location');
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setLocationError('Allow location access to see nearby gigs.');
-        setIsLoadingNearby(false);
-        return;
-      }
 
+      // Use cached location if available
       if (workerLocation && workerLocation.lat != null && workerLocation.lng != null) {
         lat = workerLocation.lat;
         lng = workerLocation.lng;
+      } else if (Platform.OS === 'web') {
+        // Web: use browser Geolocation API
+        try {
+          const coords = await getWebLocation();
+          lat = coords.lat;
+          lng = coords.lng;
+        } catch {
+          setLocationError('Allow location access to see nearby gigs.');
+          setIsLoadingNearby(false);
+          return;
+        }
       } else {
+        // Native: use expo-location
+        const Location = await import('expo-location');
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          setLocationError('Allow location access to see nearby gigs.');
+          setIsLoadingNearby(false);
+          return;
+        }
         const pos = await Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.Balanced,
         });
         lat = pos.coords.latitude;
         lng = pos.coords.longitude;
-        setWorkerLocation({ lat, lng });
-        await AsyncStorage.setItem(WORKER_LOCATION_KEY, JSON.stringify({
-          lat,
-          lng,
-          updatedAt: Date.now(),
-        }));
       }
 
+      // Cache location
+      setWorkerLocation({ lat, lng });
+      await AsyncStorage.setItem(WORKER_LOCATION_KEY, JSON.stringify({
+        lat, lng, updatedAt: Date.now(),
+      }));
+
+      // If a specific radius is given (from filter), use it directly
+      if (filterRadius && filterRadius > 0) {
+        const result = await api.getNearbyEvents(lat, lng, filterRadius);
+        const list = result.data?.events || [];
+        setNearbyEvents(list);
+        setNearbyRadiusKm(filterRadius);
+        setIsLoadingNearby(false);
+        return;
+      }
+
+      console.log(`[Nearby] Worker location: lat=${lat}, lng=${lng}`);
+
+      // Auto-expand radius until events are found
       let lastResult: any[] = [];
       let usedRadius = RADII_KM[0];
       for (const radius of RADII_KM) {
         const result = await api.getNearbyEvents(lat, lng, radius);
+        console.log(`[Nearby] Radius ${radius}km: ${result.data?.events?.length ?? 0} events, error: ${result.error || 'none'}`);
         const list = result.data?.events || [];
         if (list.length > 0) {
           setNearbyEvents(list);
@@ -185,6 +234,7 @@ const WorkerDashboard: React.FC = () => {
       setNearbyEvents(lastResult);
       setNearbyRadiusKm(usedRadius);
     } catch (e: any) {
+      console.error('[Nearby] Error:', e);
       setLocationError('Unable to fetch nearby gigs. Please try again.');
     } finally {
       setIsLoadingNearby(false);
@@ -292,7 +342,7 @@ const WorkerDashboard: React.FC = () => {
                   key={filter}
                   onPress={() => {
                     setActiveFilter(filter);
-                    if (filter === 'nearby' && nearbyEvents.length === 0 && !isLoadingNearby) loadNearby();
+                    if (filter === 'nearby' && nearbyEvents.length === 0 && !isLoadingNearby) loadNearby(0);
                   }}
                   className={`flex-1 py-2.5 rounded-xl ${activeFilter === filter ? 'bg-white' : ''}`}
                   style={activeFilter === filter ? {
@@ -315,17 +365,24 @@ const WorkerDashboard: React.FC = () => {
           </View>
         </FadeInView>
 
-        {activeFilter === 'nearby' && (
+        {(activeFilter === 'nearby' || (maxDistance > 0 && activeFilter === 'all')) && (
           <FadeInView delay={50} duration={300}>
             <View className="mx-5 mt-2 mb-1 rounded-2xl bg-accent-50 px-4 py-2.5">
               {locationError ? (
                 <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-xs text-error">{locationError}</Text>
               ) : (
-                <View className="flex-row items-center gap-2">
-                  <Icon name="near-me" className="text-accent text-sm" />
-                  <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-xs text-accent-dark">
-                    {isLoadingNearby ? 'Finding events...' : nearbyEvents.length > 0 ? `${nearbyEvents.length} event${nearbyEvents.length === 1 ? '' : 's'} within ${nearbyRadiusKm} km` : 'No events within 100 km'}
-                  </Text>
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-row items-center gap-2">
+                    <Icon name="near-me" className="text-accent text-sm" />
+                    <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-xs text-accent-dark">
+                      {isLoadingNearby ? 'Finding nearby events...' : nearbyEvents.length > 0 ? `${nearbyEvents.length} event${nearbyEvents.length === 1 ? '' : 's'} within ${nearbyRadiusKm} km` : `No events within ${maxDistance || 100} km`}
+                    </Text>
+                  </View>
+                  {maxDistance > 0 && activeFilter === 'all' && !isLoadingNearby && (
+                    <Pressable onPress={() => { setMaxDistance(0); setNearbyEvents([]); }}>
+                      <Icon name="close" className="text-accent text-sm" />
+                    </Pressable>
+                  )}
                 </View>
               )}
             </View>
@@ -410,6 +467,14 @@ const WorkerDashboard: React.FC = () => {
                                 {event.venue || event.location || 'TBD'}
                               </Text>
                             </View>
+                            {typeof event.distanceKm === 'number' && (
+                              <View className="flex-row items-center gap-1">
+                                <Icon name="near-me" className="text-white/70 text-xs" />
+                                <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-white/90 text-xs">
+                                  {event.distanceKm.toFixed(1)} km
+                                </Text>
+                              </View>
+                            )}
                           </View>
                         </View>
                       </View>
@@ -503,11 +568,11 @@ const WorkerDashboard: React.FC = () => {
                           </Text>
                         </View>
                       </View>
-                      {activeFilter === 'nearby' && typeof event.distanceKm === 'number' && (
+                      {typeof event.distanceKm === 'number' && (
                         <View className="flex-row items-center gap-1 mt-1">
                           <Icon name="near-me" className="text-accent" size={10} />
                           <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-[10px] text-accent">
-                            {event.distanceKm.toFixed(1)} km
+                            {event.distanceKm.toFixed(1)} km away
                           </Text>
                         </View>
                       )}
@@ -545,6 +610,28 @@ const WorkerDashboard: React.FC = () => {
             <View className="w-10 h-1 rounded-full bg-slate-200 self-center mb-5" />
             <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-xl text-primary-900 px-6 mb-5">Filter & Sort</Text>
 
+            {/* Distance Filter */}
+            <View className="px-6 mb-5">
+              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-500 text-sm mb-2">Nearby events</Text>
+              <View className="flex-row flex-wrap gap-2">
+                <Pressable
+                  onPress={() => setMaxDistance(0)}
+                  className={`px-4 py-2.5 rounded-2xl ${maxDistance === 0 ? 'bg-accent-50 border border-accent/20' : 'bg-surface-tertiary'}`}
+                >
+                  <Text style={{ fontFamily: 'Inter_600SemiBold' }} className={`text-sm ${maxDistance === 0 ? 'text-accent' : 'text-slate-600'}`}>All</Text>
+                </Pressable>
+                {DISTANCE_OPTIONS.map((opt) => (
+                  <Pressable
+                    key={opt.value}
+                    onPress={() => setMaxDistance(opt.value)}
+                    className={`px-4 py-2.5 rounded-2xl ${maxDistance === opt.value ? 'bg-accent-50 border border-accent/20' : 'bg-surface-tertiary'}`}
+                  >
+                    <Text style={{ fontFamily: 'Inter_600SemiBold' }} className={`text-sm ${maxDistance === opt.value ? 'text-accent' : 'text-slate-600'}`}>{opt.label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+
             <View className="px-6 mb-5">
               <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-500 text-sm mb-2">Minimum pay (₹)</Text>
               <TextInput
@@ -575,13 +662,18 @@ const WorkerDashboard: React.FC = () => {
 
             <View className="px-6 flex-row gap-3">
               <Pressable
-                onPress={() => { setMinPay(''); setSortBy('default'); setFilterVisible(false); }}
+                onPress={() => { setMinPay(''); setSortBy('default'); setMaxDistance(0); setNearbyEvents([]); setFilterVisible(false); }}
                 className="flex-1 h-12 rounded-2xl bg-surface-tertiary items-center justify-center"
               >
                 <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-slate-500">Clear</Text>
               </Pressable>
               <Pressable
-                onPress={() => setFilterVisible(false)}
+                onPress={() => {
+                  setFilterVisible(false);
+                  if (maxDistance > 0) {
+                    loadNearby(maxDistance);
+                  }
+                }}
                 className="flex-1 h-12 rounded-2xl bg-accent items-center justify-center"
                 style={{
                   shadowColor: '#E94560',

@@ -37,6 +37,7 @@ const CreateEventScreen: React.FC = () => {
   const [locationQuery, setLocationQuery] = useState('');
   const [locationResults, setLocationResults] = useState<any[]>([]);
   const [isSearchingLocation, setIsSearchingLocation] = useState(false);
+  const [selectedCoords, setSelectedCoords] = useState<{ latitude: number; longitude: number } | null>(null);
 
   const calculateTotal = () => {
     const maleTotal = formData.maleCount * formData.malePay;
@@ -54,7 +55,7 @@ const CreateEventScreen: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!locationQuery || locationQuery.trim().length < 3) {
+    if (!locationQuery || locationQuery.trim().length < 2) {
       setLocationResults([]);
       return;
     }
@@ -63,13 +64,15 @@ const CreateEventScreen: React.FC = () => {
     const timer = setTimeout(async () => {
       try {
         setIsSearchingLocation(true);
+        const q = encodeURIComponent(locationQuery.trim());
+        // Photon API (by Komoot) — free, no key, OSM data with better fuzzy search
         const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&q=${encodeURIComponent(locationQuery)}`,
+          `https://photon.komoot.io/api/?q=${q}&limit=6&lang=en&lat=20.5937&lon=78.9629&zoom=5`,
           { signal: controller.signal }
         );
         const data = await response.json();
-        if (Array.isArray(data)) {
-          setLocationResults(data);
+        if (data?.features && Array.isArray(data.features)) {
+          setLocationResults(data.features);
         }
       } catch (err) {
         if ((err as any).name !== 'AbortError') {
@@ -78,7 +81,7 @@ const CreateEventScreen: React.FC = () => {
       } finally {
         setIsSearchingLocation(false);
       }
-    }, 500);
+    }, 300);
 
     return () => {
       controller.abort();
@@ -86,10 +89,29 @@ const CreateEventScreen: React.FC = () => {
     };
   }, [locationQuery]);
 
-  const handleSelectLocation = (item: any) => {
-    setLocationQuery(item.display_name);
-    handleChange('location', item.display_name);
+  const getPhotonDisplayName = (feature: any) => {
+    const p = feature.properties || {};
+    const parts = [p.name, p.street, p.city || p.town || p.village, p.district, p.state, p.country].filter(Boolean);
+    const unique: string[] = [];
+    for (const part of parts) {
+      if (!unique.includes(part)) unique.push(part);
+    }
+    return unique.join(', ');
+  };
+
+  const handleSelectLocation = (feature: any) => {
+    const coords = feature.geometry?.coordinates; // [lng, lat]
+    const displayName = getPhotonDisplayName(feature);
+    setLocationQuery(displayName);
+    handleChange('location', displayName);
     setLocationResults([]);
+    if (coords && coords.length >= 2) {
+      const longitude = Number(coords[0]);
+      const latitude = Number(coords[1]);
+      if (!Number.isNaN(latitude) && !Number.isNaN(longitude)) {
+        setSelectedCoords({ latitude, longitude });
+      }
+    }
   };
 
   const handleImageSelect = async () => {
@@ -131,6 +153,8 @@ const CreateEventScreen: React.FC = () => {
     }
 
     const finalJobType = formData.jobType === 'Other' ? formData.jobTypeOther.trim() : formData.jobType;
+    const latitude = selectedCoords?.latitude ?? null;
+    const longitude = selectedCoords?.longitude ?? null;
     const result = await api.createEvent({
       title: formData.title,
       description: formData.description,
@@ -150,6 +174,8 @@ const CreateEventScreen: React.FC = () => {
       subtotal,
       commission,
       total,
+      latitude,
+      longitude,
     });
 
     if (result.data) {
@@ -448,22 +474,41 @@ const CreateEventScreen: React.FC = () => {
               )}
               {locationResults.length > 0 && (
                 <View className="rounded-2xl bg-surface-tertiary overflow-hidden">
-                  {locationResults.map((item) => (
-                    <Pressable
-                      key={`${item.place_id}`}
-                      onPress={() => handleSelectLocation(item)}
-                      className="px-4 py-3 border-b border-white/50"
-                    >
-                      <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-sm text-primary-900">{item.display_name}</Text>
-                    </Pressable>
-                  ))}
+                  {locationResults.map((feature, idx) => {
+                    const p = feature.properties || {};
+                    const title = p.name || p.street || p.city || p.town || 'Unknown';
+                    const subtitle = [p.city || p.town || p.village, p.district, p.state, p.country].filter(Boolean).filter(v => v !== title).join(', ');
+                    return (
+                      <Pressable
+                        key={`${p.osm_id || idx}`}
+                        onPress={() => handleSelectLocation(feature)}
+                        className="px-4 py-3 border-b border-white/50 flex-row items-center gap-3"
+                      >
+                        <Icon name="location-on" className="text-accent text-base" />
+                        <View className="flex-1">
+                          <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-sm text-primary-900" numberOfLines={1}>{title}</Text>
+                          {subtitle ? <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-[10px] text-slate-400 mt-0.5" numberOfLines={1}>{subtitle}</Text> : null}
+                        </View>
+                      </Pressable>
+                    );
+                  })}
                 </View>
               )}
-              <View className="rounded-2xl overflow-hidden">
-                <View className="h-[180px] items-center justify-center bg-surface-tertiary rounded-2xl">
-                  <Icon name="map" className="text-slate-200 text-3xl mb-2" />
-                  <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-sm text-slate-400">Map is available on mobile only</Text>
-                </View>
+              <View className="rounded-2xl overflow-hidden" style={{ height: 200 }}>
+                {selectedCoords ? (
+                  <iframe
+                    title="Event Location"
+                    width="100%"
+                    height="200"
+                    style={{ border: 0, borderRadius: 16 }}
+                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${selectedCoords.longitude - 0.01},${selectedCoords.latitude - 0.01},${selectedCoords.longitude + 0.01},${selectedCoords.latitude + 0.01}&layer=mapnik&marker=${selectedCoords.latitude},${selectedCoords.longitude}`}
+                  />
+                ) : (
+                  <View className="h-[200px] items-center justify-center bg-surface-tertiary rounded-2xl">
+                    <Icon name="map" className="text-slate-200 text-3xl mb-2" />
+                    <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-sm text-slate-400">Search a location to see it on the map</Text>
+                  </View>
+                )}
               </View>
               <View className="h-14 rounded-2xl bg-surface-tertiary px-4 justify-center">
                 <TextInput

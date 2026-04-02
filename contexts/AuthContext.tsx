@@ -32,8 +32,6 @@ interface AuthContextType {
   token: string | null;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>;
-  loginWithPhone: (idToken: string) => Promise<{ success: boolean; error?: string }>;
-  registerWithPhone: (idToken: string, name: string, phone: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   setRole: (role: Role) => Promise<{ success: boolean; error?: string }>;
   completeOnboarding: (userData: Partial<User>) => Promise<{ success: boolean; error?: string }>;
@@ -98,32 +96,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return { success: false, error: result.error };
   };
 
-  const loginWithPhone = async (idToken: string) => {
-    const result = await api.loginWithFirebase(idToken);
-    if (result.data) {
-      setUser(result.data.user);
-      setIsLoggedIn(true);
-      setRoleState(result.data.user.role);
-      setIsOnboarded(result.data.user.isOnboarded);
-      setToken(result.data.token);
-      return { success: true };
-    }
-    return { success: false, error: result.error };
-  };
-
-  const registerWithPhone = async (idToken: string, name: string, phone: string) => {
-    const result = await api.registerWithFirebase(idToken, name, phone);
-    if (result.data) {
-      setUser(result.data.user);
-      setIsLoggedIn(true);
-      setRoleState(null);
-      setIsOnboarded(false);
-      setToken(result.data.token);
-      return { success: true };
-    }
-    return { success: false, error: result.error };
-  };
-
   const logout = () => {
     api.logout();
     setIsLoggedIn(false);
@@ -164,8 +136,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         token,
         login,
         register,
-        loginWithPhone,
-        registerWithPhone,
         logout,
         setRole,
         completeOnboarding,
