@@ -19,11 +19,16 @@ export const supabase: SupabaseClient = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+const connectionString = process.env.DATABASE_URL || '';
+const isPooler = connectionString.includes('pooler.supabase.com');
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
+  connectionString,
+  ssl: { rejectUnauthorized: false },
+  // Pooler connections need these limits
+  max: isPooler ? 10 : 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
 });
 
 interface QueryResult {

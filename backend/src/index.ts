@@ -11,6 +11,7 @@ import gigsRoutes from './routes/gigs.js';
 import messagesRoutes from './routes/messages.js';
 import uploadsRoutes from './routes/uploads.js';
 import applicationsRoutes from './routes/applications.js';
+import paymentsRoutes from './routes/payments.js';
 
 dotenv.config();
 
@@ -26,12 +27,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Health check
-app.get('/api/health', (req, res) => {
+app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // Root API (so GET /api returns something)
-app.get('/api', (req, res) => {
+app.get('/api', (_req, res) => {
   res.json({ message: 'KrewsUp API', version: '1.0', docs: '/api/health for health check' });
 });
 
@@ -43,14 +44,15 @@ app.use('/api/gigs', gigsRoutes);
 app.use('/api/messages', messagesRoutes);
 app.use('/api/uploads', uploadsRoutes);
 app.use('/api/applications', applicationsRoutes);
+app.use('/api/payments', paymentsRoutes);
 
 // 404 handler
-app.use((req, res) => {
+app.use((_req, res) => {
   res.status(404).json({ error: 'Not found' });
 });
 
 // Error handler
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('Server error:', err);
   res.status(500).json({ error: 'Internal server error' });
 });
