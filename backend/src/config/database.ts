@@ -5,10 +5,24 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// EC2 and many VPCs have no IPv6 route; Node may pick Supabase's AAAA first → ENETUNREACH.
+// Force IPv4 — Supabase often returns only AAAA records; EC2/VPCs lack IPv6 routes.
 if (typeof dns.setDefaultResultOrder === 'function') {
   dns.setDefaultResultOrder('ipv4first');
 }
+dns.setDefaultResultOrder?.('ipv4first');
+// Override lookup to force IPv4 (family: 4) for all connections
+const origLookup = dns.lookup;
+dns.lookup = function (hostname: any, options: any, callback: any) {
+  if (typeof options === 'function') {
+    callback = options;
+    options = { family: 4 };
+  } else if (typeof options === 'number') {
+    options = { family: 4 };
+  } else {
+    options = { ...options, family: 4 };
+  }
+  return origLookup.call(dns, hostname, options, callback);
+} as typeof dns.lookup;
 
 const { Pool } = pg;
 
