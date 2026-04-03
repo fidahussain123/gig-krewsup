@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
@@ -8,6 +8,9 @@ import { uploadFile, UploadAsset } from '../lib/storage';
 import Icon from '../components/Icon';
 import { FadeInView } from '../components/AnimatedComponents';
 import { GlassCard } from '../components/DistrictUI';
+
+const GENDER_OPTIONS = ['Male', 'Female', 'Other'];
+const EXPERIENCE_OPTIONS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10+'];
 
 const WorkerOnboardingScreen: React.FC = () => {
   const router = useRouter();
@@ -21,6 +24,8 @@ const WorkerOnboardingScreen: React.FC = () => {
   const [aadhaarPreview, setAadhaarPreview] = useState<string>('');
   const [additionalPhotos, setAdditionalPhotos] = useState<UploadAsset[]>([]);
   const [additionalPreviews, setAdditionalPreviews] = useState<string[]>([]);
+  const [showGenderPicker, setShowGenderPicker] = useState(false);
+  const [showExperiencePicker, setShowExperiencePicker] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -77,6 +82,11 @@ const WorkerOnboardingScreen: React.FC = () => {
     setIsLoading(true);
     setError('');
 
+    if (!formData.fullName || !formData.phone || !formData.gender || !formData.age) {
+      setError('Please fill all required fields');
+      setIsLoading(false);
+      return;
+    }
     if (!profilePhoto || !aadhaarFile || additionalPhotos.length === 0) {
       setError('Profile photo, Aadhaar, and additional photos are required');
       setIsLoading(false);
@@ -116,14 +126,15 @@ const WorkerOnboardingScreen: React.FC = () => {
       }
     }
 
+    const expYears = formData.experienceYears === '10+' ? 10 : Number(formData.experienceYears) || 0;
+
     const result = await completeOnboarding({
       name: formData.fullName,
-      email: formData.email,
       phone: formData.phone,
-      city: formData.city,
-      country: formData.country,
-      age: Number(formData.age.replace(',', '.')) || 0,
-      experienceYears: Number(formData.experienceYears.replace(',', '.')) || 0,
+      city: formData.city || undefined,
+      country: formData.country || undefined,
+      age: Number(formData.age) || 0,
+      experienceYears: expYears,
       gender: formData.gender,
       avatarUrl,
       aadhaarDocUrl,
@@ -141,7 +152,6 @@ const WorkerOnboardingScreen: React.FC = () => {
 
   const isFormValid = Boolean(
     formData.fullName &&
-    formData.email &&
     formData.phone &&
     formData.age &&
     formData.experienceYears &&
@@ -269,33 +279,24 @@ const WorkerOnboardingScreen: React.FC = () => {
                   <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[11px] uppercase tracking-widest text-slate-400 mb-2">
                     Gender <Text className="text-accent">*</Text>
                   </Text>
-                  <View className="h-14 rounded-2xl bg-surface-tertiary px-4 justify-center">
-                    <TextInput
-                      value={formData.gender}
-                      onChangeText={(value) => handleChange('gender', value)}
-                      placeholder="Male/Female/Other"
-                      placeholderTextColor="#B8B8D0"
-                      style={{ fontFamily: 'Inter_500Medium' }}
-                      className="text-base text-primary-900"
-                    />
-                  </View>
+                  <Pressable onPress={() => setShowGenderPicker(true)} className="h-14 rounded-2xl bg-surface-tertiary px-4 flex-row items-center justify-between">
+                    <Text style={{ fontFamily: 'Inter_500Medium' }} className={`text-base ${formData.gender ? 'text-primary-900' : 'text-[#B8B8D0]'}`}>
+                      {formData.gender || 'Select'}
+                    </Text>
+                    <Icon name="keyboard-arrow-down" className="text-slate-400 text-xl" />
+                  </Pressable>
                 </View>
               </View>
               <View>
                 <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[11px] uppercase tracking-widest text-slate-400 mb-2">
                   Experience (Years) <Text className="text-accent">*</Text>
                 </Text>
-                <View className="h-14 rounded-2xl bg-surface-tertiary px-4 justify-center">
-                  <TextInput
-                    value={formData.experienceYears}
-                    onChangeText={(value) => handleChange('experienceYears', value)}
-                    placeholder="2"
-                    placeholderTextColor="#B8B8D0"
-                    keyboardType="numeric"
-                    style={{ fontFamily: 'Inter_500Medium' }}
-                    className="text-base text-primary-900"
-                  />
-                </View>
+                <Pressable onPress={() => setShowExperiencePicker(true)} className="h-14 rounded-2xl bg-surface-tertiary px-4 flex-row items-center justify-between">
+                  <Text style={{ fontFamily: 'Inter_500Medium' }} className={`text-base ${formData.experienceYears ? 'text-primary-900' : 'text-[#B8B8D0]'}`}>
+                    {formData.experienceYears ? `${formData.experienceYears} year${formData.experienceYears === '1' ? '' : 's'}` : 'Select experience'}
+                  </Text>
+                  <Icon name="keyboard-arrow-down" className="text-slate-400 text-xl" />
+                </Pressable>
               </View>
             </View>
           </GlassCard>
@@ -310,23 +311,6 @@ const WorkerOnboardingScreen: React.FC = () => {
                 <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900">Contact Details</Text>
               </View>
               <View className="gap-4">
-                <View>
-                  <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[11px] uppercase tracking-widest text-slate-400 mb-2">
-                    Email <Text className="text-accent">*</Text>
-                  </Text>
-                  <View className="h-14 rounded-2xl bg-surface-tertiary px-4 justify-center">
-                    <TextInput
-                      value={formData.email}
-                      onChangeText={(value) => handleChange('email', value)}
-                      placeholder="john@email.com"
-                      placeholderTextColor="#B8B8D0"
-                      autoCapitalize="none"
-                      keyboardType="email-address"
-                      style={{ fontFamily: 'Inter_500Medium' }}
-                      className="text-base text-primary-900"
-                    />
-                  </View>
-                </View>
                 <View>
                   <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-[11px] uppercase tracking-widest text-slate-400 mb-2">
                     Phone <Text className="text-accent">*</Text>
@@ -476,6 +460,56 @@ const WorkerOnboardingScreen: React.FC = () => {
           </View>
         </FadeInView>
       </ScrollView>
+
+      {/* Gender Picker Modal */}
+      <Modal transparent animationType="fade" visible={showGenderPicker} onRequestClose={() => setShowGenderPicker(false)}>
+        <Pressable onPress={() => setShowGenderPicker(false)} className="flex-1 items-center justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}>
+          <Pressable onPress={() => {}} className="w-full bg-white rounded-t-3xl" style={{ paddingBottom: insets.bottom + 16 }}>
+            <View className="items-center py-3">
+              <View className="w-10 h-1 rounded-full bg-slate-200" />
+            </View>
+            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900 text-lg px-6 mb-3">Select Gender</Text>
+            {GENDER_OPTIONS.map((option) => (
+              <Pressable
+                key={option}
+                onPress={() => { handleChange('gender', option); setShowGenderPicker(false); }}
+                className={`px-6 py-4 flex-row items-center justify-between ${formData.gender === option ? 'bg-accent/5' : ''}`}
+              >
+                <Text style={{ fontFamily: formData.gender === option ? 'Inter_700Bold' : 'Inter_500Medium' }} className={`text-base ${formData.gender === option ? 'text-accent' : 'text-primary-900'}`}>
+                  {option}
+                </Text>
+                {formData.gender === option && <Icon name="check-circle" className="text-accent text-xl" />}
+              </Pressable>
+            ))}
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Experience Picker Modal */}
+      <Modal transparent animationType="fade" visible={showExperiencePicker} onRequestClose={() => setShowExperiencePicker(false)}>
+        <Pressable onPress={() => setShowExperiencePicker(false)} className="flex-1 items-center justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}>
+          <Pressable onPress={() => {}} className="w-full bg-white rounded-t-3xl" style={{ paddingBottom: insets.bottom + 16, maxHeight: '50%' }}>
+            <View className="items-center py-3">
+              <View className="w-10 h-1 rounded-full bg-slate-200" />
+            </View>
+            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900 text-lg px-6 mb-3">Years of Experience</Text>
+            <ScrollView>
+              {EXPERIENCE_OPTIONS.map((option) => (
+                <Pressable
+                  key={option}
+                  onPress={() => { handleChange('experienceYears', option); setShowExperiencePicker(false); }}
+                  className={`px-6 py-4 flex-row items-center justify-between ${formData.experienceYears === option ? 'bg-accent/5' : ''}`}
+                >
+                  <Text style={{ fontFamily: formData.experienceYears === option ? 'Inter_700Bold' : 'Inter_500Medium' }} className={`text-base ${formData.experienceYears === option ? 'text-accent' : 'text-primary-900'}`}>
+                    {option} year{option === '1' ? '' : 's'}
+                  </Text>
+                  {formData.experienceYears === option && <Icon name="check-circle" className="text-accent text-xl" />}
+                </Pressable>
+              ))}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </KeyboardAvoidingView>
   );
 };

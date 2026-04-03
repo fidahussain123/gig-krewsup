@@ -25,7 +25,7 @@ module.exports = {
     },
     android: {
       permissions: ['RECORD_AUDIO'],
-      package: 'com.krewsupindia.app',
+      package: 'com.fidasp.krewsup',
       softwareKeyboardLayoutMode: 'pan',
       // CRITICAL: Allow HTTP (cleartext) so app can reach http://51.21.245.127:3001
       // Without this, Android 9+ blocks all HTTP traffic
