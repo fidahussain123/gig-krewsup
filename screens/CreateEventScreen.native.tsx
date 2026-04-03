@@ -11,6 +11,7 @@ import { uploadFile, UploadAsset } from '../lib/storage';
 import Icon from '../components/Icon';
 import { ScalePress } from '../components/AnimatedComponents';
 import { GlassCard } from '../components/DistrictUI';
+import RazorpayCheckout from 'react-native-razorpay';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_PADDING = Math.max(16, Math.min(24, SCREEN_WIDTH * 0.05));
@@ -29,10 +30,13 @@ const CreateEventScreen: React.FC = () => {
   const useMapOnAndroid = true;
   const [mapReady, setMapReady] = useState(Platform.OS !== 'android');
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
+  const [step, setStep] = useState<'form' | 'payment' | 'success'>('form');
+  const [createdEventId, setCreatedEventId] = useState('');
+  const [isPaymentLoading, setIsPaymentLoading] = useState(false);
+  const [paymentError, setPaymentError] = useState('');
+  const [paidVia, setPaidVia] = useState<'immediate' | 'later' | null>(null);
   const [eventImage, setEventImage] = useState<UploadAsset | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
-  const paymentMethod: 'later' = 'later';
 
   const jobTypes = ['Serving', 'Volunteering', 'Security', 'Hospitality', 'Cleaning', 'Logistics', 'Other'];
 
@@ -256,7 +260,6 @@ const CreateEventScreen: React.FC = () => {
       femaleCount: formData.femaleCount,
       malePay: formData.malePay,
       femalePay: formData.femalePay,
-      paymentMethod,
       subtotal,
       commission,
       total,
@@ -265,10 +268,8 @@ const CreateEventScreen: React.FC = () => {
     });
 
     if (result.data) {
-      setSuccess(true);
-      setTimeout(() => {
-        router.replace('/organizer');
-      }, 1200);
+      setCreatedEventId(result.data.eventId);
+      setStep('payment');
     } else {
       setError(result.error || 'Failed to create event');
     }
@@ -276,17 +277,94 @@ const CreateEventScreen: React.FC = () => {
     setIsLoading(false);
   };
 
+  const handlePayNow = async () => {
+    setIsPaymentLoading(true);
+    setPaymentError('');
+    const orderResult = await api.createPaymentOrder(createdEventId, total);
+    if (!orderResult.data) {
+      setPaymentError(orderResult.error || 'Failed to create order');
+      setIsPaymentLoading(false);
+      return;
+    }
+    try {
+      const response = await RazorpayCheckout.open({
+        key: orderResult.data.razorpay_key,
+        amount: String(orderResult.data.amount),
+        currency: orderResult.data.currency,
+        order_id: orderResult.data.order_id,
+        name: 'KrewsUp',
+        description: formData.title,
+        theme: { color: '#E94560' },
+      });
+      const verifyResult = await api.verifyPayment({
+        eventId: createdEventId,
+        razorpay_order_id: response.razorpay_order_id,
+        razorpay_payment_id: response.razorpay_payment_id,
+        razorpay_signature: response.razorpay_signature,
+      });
+      if (verifyResult.data) {
+        setPaidVia('immediate');
+        setStep('success');
+      } else {
+        setPaymentError(verifyResult.error || 'Payment verification failed');
+      }
+    } catch (err: any) {
+      // User dismissed or payment failed
+      if (err?.code !== 'PAYMENT_CANCELLED') {
+        setPaymentError(err?.description || 'Payment failed. Please try again.');
+      }
+    }
+    setIsPaymentLoading(false);
+  };
+
+  const handlePayLater = async () => {
+    setIsPaymentLoading(true);
+    setPaymentError('');
+    const result = await api.payLater(createdEventId);
+    if (result.data) {
+      setPaidVia('later');
+      setStep('success');
+    } else {
+      setPaymentError(result.error || 'Failed to set pay later');
+    }
+    setIsPaymentLoading(false);
+  };
+
   const isFormValid = formData.title && formData.startDate && (formData.maleCount > 0 || formData.femaleCount > 0);
 
-  if (success) {
+  if (step === 'success') {
     return (
-      <View className="flex-1 bg-white items-center justify-center px-8">
-        <View className="items-center">
-          <View className="h-20 w-20 rounded-3xl bg-success/10 items-center justify-center mb-5">
+      <View className="flex-1 bg-surface-secondary items-center justify-center px-8">
+        <View className="items-center w-full max-w-sm">
+          <View
+            className="h-24 w-24 rounded-full bg-success/10 items-center justify-center mb-6"
+            style={{ shadowColor: '#00C48C', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 12, elevation: 4 }}
+          >
             <Icon name="check_circle" className="text-success text-5xl" />
           </View>
-          <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-xl text-primary-900 mb-2 text-center">Event Created!</Text>
-          <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-400 text-sm text-center">₹{total.toFixed(2)} added to pending payments</Text>
+          <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-2xl text-primary-900 mb-2 text-center">Event Created!</Text>
+          <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-base text-primary-900 mb-1 text-center">{formData.title}</Text>
+          <View className="flex-row items-center gap-2 mb-6">
+            <View className={`px-3 py-1 rounded-full ${paidVia === 'immediate' ? 'bg-success/10' : 'bg-amber-50'}`}>
+              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className={`text-xs ${paidVia === 'immediate' ? 'text-success' : 'text-amber-500'}`}>
+                {paidVia === 'immediate' ? `Paid \u20B9${total.toFixed(2)}` : 'Pay Later Selected'}
+              </Text>
+            </View>
+          </View>
+          {paidVia === 'later' && (
+            <View className="bg-amber-50 rounded-2xl p-4 mb-6 w-full">
+              <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-amber-600 text-sm text-center">
+                Chat room will be unlocked once payment is completed
+              </Text>
+            </View>
+          )}
+          <Pressable
+            onPress={() => router.replace('/organizer')}
+            className="w-full py-4 rounded-2xl bg-accent items-center"
+            style={{ shadowColor: '#E94560', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6 }}
+          >
+            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-white text-lg">Done</Text>
+          </Pressable>
         </View>
       </View>
     );
@@ -663,28 +741,70 @@ const CreateEventScreen: React.FC = () => {
           </View>
         </GlassCard>
 
-        {/* Submit */}
-        <ScalePress
-          onPress={handleSubmit}
-          disabled={!isFormValid || isLoading}
-          className={`w-full py-4 rounded-2xl items-center justify-center ${isFormValid && !isLoading ? 'bg-accent' : 'bg-slate-200'}`}
-          style={isFormValid && !isLoading ? {
-            shadowColor: '#E94560',
-            shadowOffset: { width: 0, height: 6 },
-            shadowOpacity: 0.3,
-            shadowRadius: 12,
-            elevation: 6,
-          } : undefined}
-        >
-          {isLoading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <View className="flex-row items-center gap-2">
-              <Text style={{ fontFamily: 'Inter_700Bold' }} className={isFormValid ? 'text-white text-base' : 'text-slate-400 text-base'}>Create Event</Text>
-              {isFormValid && <Icon name="check_circle" className="text-white text-xl" />}
+        {/* Submit / Payment */}
+        {step === 'payment' ? (
+          <GlassCard>
+            <View className="flex-row items-center gap-2 mb-3">
+              <Icon name="payments" className="text-accent text-lg" />
+              <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900">Complete Payment</Text>
             </View>
-          )}
-        </ScalePress>
+            <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-400 text-sm mb-4">
+              Your event has been created. Pay now to unlock the team chat room.
+            </Text>
+            {paymentError ? (
+              <View className="mb-3 p-3 bg-error/10 rounded-2xl">
+                <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-error text-sm">{paymentError}</Text>
+              </View>
+            ) : null}
+            <ScalePress
+              onPress={handlePayNow}
+              disabled={isPaymentLoading}
+              className="w-full py-4 rounded-2xl bg-accent items-center mb-3"
+              style={{ shadowColor: '#E94560', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6 }}
+            >
+              {isPaymentLoading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <View className="flex-row items-center gap-2">
+                  <Icon name="credit_card" className="text-white" size={20} />
+                  <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-white text-base">Pay Now ₹{total.toFixed(2)}</Text>
+                </View>
+              )}
+            </ScalePress>
+            <ScalePress
+              onPress={handlePayLater}
+              disabled={isPaymentLoading}
+              className="w-full py-3 rounded-2xl border border-slate-200 items-center mb-3"
+            >
+              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-500">Pay Later</Text>
+            </ScalePress>
+            <Text style={{ fontFamily: 'Inter_400Regular' }} className="text-xs text-slate-400 text-center">
+              Pay Later: chat room unlocked only after payment is made
+            </Text>
+          </GlassCard>
+        ) : (
+          <ScalePress
+            onPress={handleSubmit}
+            disabled={!isFormValid || isLoading}
+            className={`w-full py-4 rounded-2xl items-center justify-center ${isFormValid && !isLoading ? 'bg-accent' : 'bg-slate-200'}`}
+            style={isFormValid && !isLoading ? {
+              shadowColor: '#E94560',
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.3,
+              shadowRadius: 12,
+              elevation: 6,
+            } : undefined}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <View className="flex-row items-center gap-2">
+                <Text style={{ fontFamily: 'Inter_700Bold' }} className={isFormValid ? 'text-white text-base' : 'text-slate-400 text-base'}>Create Event</Text>
+                {isFormValid && <Icon name="check_circle" className="text-white text-xl" />}
+              </View>
+            )}
+          </ScalePress>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );

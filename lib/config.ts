@@ -3,8 +3,8 @@
  * For local development, use localhost.
  * For production, update with your deployed server URL.
  */
-const LOCAL_API = 'http://localhost:3001/api';
-const LOCAL_SOCKET = 'http://localhost:3001/';
+const PROD_API = 'http://13.126.136.144:3001/api';
+const PROD_SOCKET = 'http://13.126.136.144:3001/';
 
-export const API_BASE_URL = LOCAL_API;
-export const SOCKET_BASE_URL = LOCAL_SOCKET;
+export const API_BASE_URL = PROD_API;
+export const SOCKET_BASE_URL = PROD_SOCKET;

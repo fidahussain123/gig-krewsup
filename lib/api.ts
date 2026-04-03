@@ -295,6 +295,37 @@ class ApiClient {
     return this.request<{ worker: any; photos: any[] }>(`/users/worker/${workerId}`);
   }
 
+  // Payment endpoints
+  async createPaymentOrder(eventId: string, amount: number) {
+    return this.request<{ order_id: string; amount: number; currency: string; razorpay_key: string }>('/payments/create-order', {
+      method: 'POST',
+      body: JSON.stringify({ eventId, amount }),
+    });
+  }
+
+  async verifyPayment(data: {
+    eventId: string;
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+  }) {
+    return this.request('/payments/verify', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async payLater(eventId: string) {
+    return this.request<{ payment_id: string; payment_status: string }>('/payments/pay-later', {
+      method: 'POST',
+      body: JSON.stringify({ eventId }),
+    });
+  }
+
+  async getPaymentStatus(eventId: string) {
+    return this.request<{ has_payment: boolean; payment_status: string; is_pay_later: boolean; amount: number }>(`/payments/status/${eventId}`);
+  }
+
   logout() {
     this.setToken(null);
   }

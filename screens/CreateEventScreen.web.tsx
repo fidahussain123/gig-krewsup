@@ -11,10 +11,13 @@ const CreateEventScreen: React.FC = () => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
+  const [step, setStep] = useState<'form' | 'payment' | 'success'>('form');
+  const [createdEventId, setCreatedEventId] = useState('');
+  const [isPaymentLoading, setIsPaymentLoading] = useState(false);
+  const [paymentError, setPaymentError] = useState('');
+  const [paidVia, setPaidVia] = useState<'immediate' | 'later' | null>(null);
   const [eventImage, setEventImage] = useState<UploadAsset | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
-  const paymentMethod: 'later' = 'later';
 
   const jobTypes = ['Serving', 'Volunteering', 'Security', 'Hospitality', 'Cleaning', 'Logistics', 'Other'];
 
@@ -170,7 +173,6 @@ const CreateEventScreen: React.FC = () => {
       femaleCount: formData.femaleCount,
       malePay: formData.malePay,
       femalePay: formData.femalePay,
-      paymentMethod,
       subtotal,
       commission,
       total,
@@ -179,10 +181,8 @@ const CreateEventScreen: React.FC = () => {
     });
 
     if (result.data) {
-      setSuccess(true);
-      setTimeout(() => {
-        router.replace('/organizer');
-      }, 1200);
+      setCreatedEventId(result.data.eventId);
+      setStep('payment');
     } else {
       setError(result.error || 'Failed to create event');
     }
@@ -190,26 +190,109 @@ const CreateEventScreen: React.FC = () => {
     setIsLoading(false);
   };
 
+  const loadRazorpayScript = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if ((window as any).Razorpay) { resolve(true); return; }
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const handlePayNow = async () => {
+    setIsPaymentLoading(true);
+    setPaymentError('');
+    const orderResult = await api.createPaymentOrder(createdEventId, total);
+    if (!orderResult.data) {
+      setPaymentError(orderResult.error || 'Failed to create order');
+      setIsPaymentLoading(false);
+      return;
+    }
+    const loaded = await loadRazorpayScript();
+    if (!loaded) {
+      setPaymentError('Failed to load payment gateway. Please try again.');
+      setIsPaymentLoading(false);
+      return;
+    }
+    const options = {
+      key: orderResult.data.razorpay_key,
+      amount: orderResult.data.amount,
+      currency: orderResult.data.currency,
+      order_id: orderResult.data.order_id,
+      name: 'KrewsUp',
+      description: formData.title,
+      theme: { color: '#E94560' },
+      handler: async (response: any) => {
+        const verifyResult = await api.verifyPayment({
+          eventId: createdEventId,
+          razorpay_order_id: response.razorpay_order_id,
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_signature: response.razorpay_signature,
+        });
+        if (verifyResult.data) {
+          setPaidVia('immediate');
+          setStep('success');
+        } else {
+          setPaymentError(verifyResult.error || 'Payment verification failed');
+        }
+        setIsPaymentLoading(false);
+      },
+      modal: { ondismiss: () => setIsPaymentLoading(false) },
+    };
+    const rzp = new (window as any).Razorpay(options);
+    rzp.open();
+  };
+
+  const handlePayLater = async () => {
+    setIsPaymentLoading(true);
+    setPaymentError('');
+    const result = await api.payLater(createdEventId);
+    if (result.data) {
+      setPaidVia('later');
+      setStep('success');
+    } else {
+      setPaymentError(result.error || 'Failed to set pay later');
+    }
+    setIsPaymentLoading(false);
+  };
+
   const isFormValid = formData.title && formData.startDate && (formData.maleCount > 0 || formData.femaleCount > 0);
 
-  if (success) {
+  if (step === 'success') {
     return (
-      <View className="flex-1 bg-surface-secondary items-center justify-center">
-        <View className="items-center">
+      <View className="flex-1 bg-surface-secondary items-center justify-center px-8">
+        <View className="items-center w-full max-w-sm">
           <View
             className="h-24 w-24 rounded-full bg-success/10 items-center justify-center mb-6"
-            style={{
-              shadowColor: '#00C48C',
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.2,
-              shadowRadius: 12,
-              elevation: 4,
-            }}
+            style={{ shadowColor: '#00C48C', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 12, elevation: 4 }}
           >
             <Icon name="check_circle" className="text-success text-5xl" />
           </View>
-          <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-2xl text-primary-900 mb-2">Event Created!</Text>
-          <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-400">{'\u20B9'}{total.toFixed(2)} added to pending payments</Text>
+          <Text style={{ fontFamily: 'Inter_800ExtraBold' }} className="text-2xl text-primary-900 mb-2 text-center">Event Created!</Text>
+          <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-base text-primary-900 mb-1 text-center">{formData.title}</Text>
+          <View className="flex-row items-center gap-2 mb-6">
+            <View className={`px-3 py-1 rounded-full ${paidVia === 'immediate' ? 'bg-success/10' : 'bg-amber-50'}`}>
+              <Text style={{ fontFamily: 'Inter_600SemiBold' }} className={`text-xs ${paidVia === 'immediate' ? 'text-success' : 'text-amber-500'}`}>
+                {paidVia === 'immediate' ? `Paid \u20B9${total.toFixed(2)}` : 'Pay Later Selected'}
+              </Text>
+            </View>
+          </View>
+          {paidVia === 'later' && (
+            <View className="bg-amber-50 rounded-2xl p-4 mb-6 w-full">
+              <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-amber-600 text-sm text-center">
+                Chat room will be unlocked once payment is completed
+              </Text>
+            </View>
+          )}
+          <Pressable
+            onPress={() => router.replace('/organizer')}
+            className="w-full py-4 rounded-2xl bg-accent items-center"
+            style={{ shadowColor: '#E94560', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6 }}
+          >
+            <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-white text-lg">Done</Text>
+          </Pressable>
         </View>
       </View>
     );
@@ -688,30 +771,83 @@ const CreateEventScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Submit */}
-        <View className="px-5 py-6">
-          <Pressable
-            onPress={handleSubmit}
-            disabled={!isFormValid || isLoading}
-            className={`w-full py-4 rounded-2xl items-center justify-center ${isFormValid && !isLoading ? 'bg-accent' : 'bg-surface-tertiary'}`}
-            style={isFormValid && !isLoading ? {
-              shadowColor: '#E94560',
-              shadowOffset: { width: 0, height: 6 },
-              shadowOpacity: 0.3,
-              shadowRadius: 12,
-              elevation: 6,
-            } : undefined}
-          >
-            {isLoading ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <View className="flex-row items-center gap-2">
-                <Icon name="check" className={isFormValid ? 'text-white' : 'text-slate-400'} size={20} />
-                <Text style={{ fontFamily: 'Inter_700Bold' }} className={`${isFormValid ? 'text-white' : 'text-slate-400'} text-lg`}>Create Event</Text>
+        {/* Submit / Payment */}
+        {step === 'payment' ? (
+          <View className="mx-5 my-6">
+            <View
+              className="bg-white rounded-3xl p-5"
+              style={{
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.04,
+                shadowRadius: 12,
+                elevation: 2,
+              }}
+            >
+              <View className="flex-row items-center gap-2 mb-4">
+                <Icon name="payments" className="text-accent text-lg" />
+                <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-primary-900">Complete Payment</Text>
               </View>
-            )}
-          </Pressable>
-        </View>
+              <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-slate-400 text-sm mb-5">
+                Your event has been created. Pay now to unlock the team chat room.
+              </Text>
+              {paymentError ? (
+                <View className="mb-4 p-3 bg-error/10 rounded-2xl">
+                  <Text style={{ fontFamily: 'Inter_500Medium' }} className="text-error text-sm">{paymentError}</Text>
+                </View>
+              ) : null}
+              <Pressable
+                onPress={handlePayNow}
+                disabled={isPaymentLoading}
+                className="w-full py-4 rounded-2xl bg-accent items-center mb-3"
+                style={{ shadowColor: '#E94560', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6 }}
+              >
+                {isPaymentLoading ? (
+                  <ActivityIndicator color="#ffffff" />
+                ) : (
+                  <View className="flex-row items-center gap-2">
+                    <Icon name="credit_card" className="text-white" size={20} />
+                    <Text style={{ fontFamily: 'Inter_700Bold' }} className="text-white text-lg">Pay Now ₹{total.toFixed(2)}</Text>
+                  </View>
+                )}
+              </Pressable>
+              <Pressable
+                onPress={handlePayLater}
+                disabled={isPaymentLoading}
+                className="w-full py-3 rounded-2xl border border-slate-200 items-center"
+              >
+                <Text style={{ fontFamily: 'Inter_600SemiBold' }} className="text-slate-500">Pay Later</Text>
+              </Pressable>
+              <Text style={{ fontFamily: 'Inter_400Regular' }} className="text-xs text-slate-400 text-center mt-3">
+                Pay Later: chat room unlocked only after payment is made
+              </Text>
+            </View>
+          </View>
+        ) : (
+          <View className="px-5 py-6">
+            <Pressable
+              onPress={handleSubmit}
+              disabled={!isFormValid || isLoading}
+              className={`w-full py-4 rounded-2xl items-center justify-center ${isFormValid && !isLoading ? 'bg-accent' : 'bg-surface-tertiary'}`}
+              style={isFormValid && !isLoading ? {
+                shadowColor: '#E94560',
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: 0.3,
+                shadowRadius: 12,
+                elevation: 6,
+              } : undefined}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <View className="flex-row items-center gap-2">
+                  <Icon name="check" className={isFormValid ? 'text-white' : 'text-slate-400'} size={20} />
+                  <Text style={{ fontFamily: 'Inter_700Bold' }} className={`${isFormValid ? 'text-white' : 'text-slate-400'} text-lg`}>Create Event</Text>
+                </View>
+              )}
+            </Pressable>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
