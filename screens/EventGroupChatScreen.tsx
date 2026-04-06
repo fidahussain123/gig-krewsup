@@ -243,7 +243,7 @@ const EventGroupChatScreen: React.FC = () => {
   return (
     <KeyboardAvoidingView
       className="flex-1 bg-surface-secondary"
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior="padding"
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
       {/* Header */}

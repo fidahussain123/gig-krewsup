@@ -27,7 +27,7 @@ const CreateEventScreen: React.FC = () => {
     right: rawInsets?.right ?? 0,
   };
   const [isLoading, setIsLoading] = useState(false);
-  const useMapOnAndroid = true;
+  const useMapOnAndroid = false; // Google Maps API key not configured — use search-only on Android
   const [mapReady, setMapReady] = useState(Platform.OS !== 'android');
   const [error, setError] = useState('');
   const [step, setStep] = useState<'form' | 'payment' | 'success'>('form');
