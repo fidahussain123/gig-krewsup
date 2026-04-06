@@ -93,7 +93,7 @@ const OrganizerOnboardingScreen: React.FC = () => {
   const isFormValid = formData.companyName && formData.email && formData.organizerType;
 
   return (
-    <KeyboardAvoidingView className="flex-1 bg-surface-secondary" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView className="flex-1 bg-surface-secondary" behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       {/* Header */}
       <View
         className="px-6 pb-5 bg-white"

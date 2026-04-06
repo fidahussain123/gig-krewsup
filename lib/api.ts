@@ -40,9 +40,28 @@ class ApiClient {
     return this.token;
   }
 
+  private async fetchWithTimeout(
+    url: string,
+    options: RequestInit,
+    timeoutMs = 15000
+  ): Promise<Response> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+      return response;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    retries = 2
   ): Promise<ApiResponse<T>> {
     const token = await this.getToken();
     const headers: Record<string, string> = {
@@ -55,39 +74,56 @@ class ApiClient {
     }
 
     const url = `${API_BASE_URL}${endpoint}`;
-    try {
-      const response = await fetch(url, {
-        ...options,
-        headers,
-      });
+    let lastError: any;
 
-      let data: any;
+    for (let attempt = 0; attempt <= retries; attempt++) {
       try {
-        data = await response.json();
-      } catch {
-        return {
-          error: `Server at ${API_BASE_URL} returned invalid response (not JSON). Is the API running?`,
-        };
-      }
+        const response = await this.fetchWithTimeout(url, {
+          ...options,
+          headers,
+        });
 
-      if (!response.ok) {
-        return { error: data?.error || `Request failed (${response.status})` };
-      }
+        let data: any;
+        try {
+          data = await response.json();
+        } catch {
+          return {
+            error: `Server at ${API_BASE_URL} returned invalid response (not JSON). Is the API running?`,
+          };
+        }
 
-      return { data };
-    } catch (error: any) {
-      const msg = error?.message || '';
-      const isNetwork =
-        msg.includes('fetch') ||
-        msg.includes('network') ||
-        msg.includes('Failed to fetch') ||
-        msg.includes('Network request failed');
-      const shown = isNetwork
-        ? `Cannot connect to ${API_BASE_URL}. Check server, URL in .env, and network.`
-        : msg || 'Request failed';
-      console.error('API request failed:', url, error);
-      return { error: shown };
+        if (!response.ok) {
+          return { error: data?.error || `Request failed (${response.status})` };
+        }
+
+        return { data };
+      } catch (error: any) {
+        lastError = error;
+        const isAbort = error?.name === 'AbortError';
+        const msg = error?.message || '';
+        const isNetwork =
+          isAbort ||
+          msg.includes('fetch') ||
+          msg.includes('network') ||
+          msg.includes('Failed to fetch') ||
+          msg.includes('Network request failed');
+
+        // Only retry on network errors, not on server errors
+        if (isNetwork && attempt < retries) {
+          // Wait briefly before retrying (500ms, then 1000ms)
+          await new Promise(r => setTimeout(r, (attempt + 1) * 500));
+          continue;
+        }
+
+        const shown = isNetwork
+          ? `Cannot connect to ${API_BASE_URL}. Check server, URL in .env, and network.`
+          : msg || 'Request failed';
+        console.error(`API request failed (attempt ${attempt + 1}):`, url, error);
+        return { error: shown };
+      }
     }
+
+    return { error: `Cannot connect to ${API_BASE_URL}. Check server, URL in .env, and network.` };
   }
 
   // Auth endpoints

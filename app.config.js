@@ -2,8 +2,8 @@
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 
-const DEFAULT_API = 'http://51.21.245.127:3001/api';
-const DEFAULT_SOCKET = 'http://51.21.245.127:3001/';
+const DEFAULT_API = 'http://13.126.136.144:3001/api';
+const DEFAULT_SOCKET = 'http://13.126.136.144:3001/';
 const apiUrl = (process.env.EXPO_PUBLIC_API_URL || DEFAULT_API).trim();
 const socketUrl = (process.env.EXPO_PUBLIC_SOCKET_URL || DEFAULT_SOCKET).trim();
 console.log('[KrewsUp] Using API:', apiUrl);
@@ -26,8 +26,8 @@ module.exports = {
     android: {
       permissions: ['RECORD_AUDIO'],
       package: 'com.fidasp.krewsup',
-      softwareKeyboardLayoutMode: 'pan',
-      // CRITICAL: Allow HTTP (cleartext) so app can reach http://51.21.245.127:3001
+      softwareKeyboardLayoutMode: 'adjustResize',
+      // CRITICAL: Allow HTTP (cleartext) so app can reach http://13.126.136.144:3001
       // Without this, Android 9+ blocks all HTTP traffic
       usesCleartextTraffic: true,
     },

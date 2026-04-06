@@ -371,7 +371,7 @@ const CreateEventScreen: React.FC = () => {
   }
 
   return (
-    <KeyboardAvoidingView className="flex-1 bg-surface-secondary" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView className="flex-1 bg-surface-secondary" behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       {/* Header */}
       <View className="bg-white flex-row items-center" style={{ paddingTop: insets.top + 8, paddingBottom: 14, paddingHorizontal: CARD_PADDING }}>
         <ScalePress onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-surface-tertiary">

@@ -281,7 +281,7 @@ const WorkerDashboard: React.FC = () => {
   const restEvents = visibleEvents.filter(e => !featuredEvents.includes(e));
 
   return (
-    <KeyboardAvoidingView className="flex-1 bg-surface-secondary" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView className="flex-1 bg-surface-secondary" behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       {/* Sticky Header */}
       <View className="bg-white" style={{ paddingTop: insets.top }}>
         <FadeInView delay={0} duration={400}>

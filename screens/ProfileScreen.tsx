@@ -124,7 +124,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ role }) => {
   const currentAvatar = photoPreview || user?.avatarUrl;
 
   return (
-    <KeyboardAvoidingView className="flex-1 bg-surface-secondary" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView className="flex-1 bg-surface-secondary" behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       {/* Profile Header */}
       <View className="bg-white" style={{ paddingTop: insets.top }}>
         <View className="px-5 pt-3 pb-5">
