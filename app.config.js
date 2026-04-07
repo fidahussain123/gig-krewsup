@@ -26,10 +26,6 @@ module.exports = {
     android: {
       permissions: ['RECORD_AUDIO'],
       package: 'com.fidasp.krewsup',
-      softwareKeyboardLayoutMode: 'adjustResize',
-      // CRITICAL: Allow HTTP (cleartext) so app can reach http://13.126.136.144:3001
-      // Without this, Android 9+ blocks all HTTP traffic
-      usesCleartextTraffic: true,
     },
     web: {
       bundler: 'metro',
@@ -41,6 +37,10 @@ module.exports = {
         projectId: '21f05b5d-b4d1-4ee2-9a99-1be0a5900871',
       },
     },
-    plugins: ['@react-native-community/datetimepicker', './plugins/withCleartextTraffic.cjs'],
+    plugins: [
+      '@react-native-community/datetimepicker',
+      './plugins/withCleartextTraffic.cjs',
+      './plugins/withRazorpay.cjs',
+    ],
   },
 };
