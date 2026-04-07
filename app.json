@@ -19,9 +19,7 @@
       "permissions": [
         "RECORD_AUDIO"
       ],
-      "package": "com.fidasp.krewsup",
-      "softwareKeyboardLayoutMode": "pan",
-      "usesCleartextTraffic": true
+      "package": "com.fidasp.krewsup"
     },
     "web": {
       "bundler": "metro"

@@ -12,10 +12,12 @@ dist
 dist-ssr
 *.local
 .expo
-.env
+
+# Native build folders (managed by expo prebuild / CNG)
+android/
+ios/
 
 # Editor directories and files
-.vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
@@ -24,3 +26,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+branch_structure.json
+temp_auto_push.bat
+temp_interactive_push.bat
+config.bat
